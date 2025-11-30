@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/providers.dart';
 
@@ -16,23 +15,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD:grown_health/lib/splash_screen.dart
-    _checkLoginAndNavigate();
-  }
-
-  Future<void> _checkLoginAndNavigate() async {
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-    if (!mounted) return;
-    if (isLoggedIn) {
-      Navigator.of(context).pushReplacementNamed('/home');
-    } else {
-      Navigator.of(context).pushReplacementNamed('/onboarding');
-=======
     _navigateAfterDelay();
   }
 
@@ -44,8 +26,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (authState.status == AuthStatus.authenticated) {
       Navigator.of(context).pushReplacementNamed('/home');
     } else {
-      Navigator.of(context).pushReplacementNamed('/login');
->>>>>>> b64884f59d8d82727d157147f2c34b84c67a4956:grown_health/lib/screens/splash_screen.dart
+      Navigator.of(context).pushReplacementNamed('/onboarding');
     }
   }
 

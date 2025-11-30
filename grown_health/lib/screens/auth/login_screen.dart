@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../providers/providers.dart';
 
@@ -34,34 +33,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-<<<<<<< HEAD:grown_health/lib/login_screen.dart
-    setState(() => _loading = true);
-    try {
-      await AuthApi.login(email: email, password: password);
-      if (!mounted) return;
-
-      // Save login state
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', true);
-
-      if (!mounted) return;
-=======
-    final success = await ref.read(authProvider.notifier).login(
-          email: email,
-          password: password,
-        );
+    final success = await ref
+        .read(authProvider.notifier)
+        .login(email: email, password: password);
 
     if (!mounted) return;
 
     if (success) {
->>>>>>> b64884f59d8d82727d157147f2c34b84c67a4956:grown_health/lib/screens/auth/login_screen.dart
       Navigator.of(context).pushReplacementNamed('/home');
     } else {
       final error = ref.read(authProvider).error;
       if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
       }
     }
   }

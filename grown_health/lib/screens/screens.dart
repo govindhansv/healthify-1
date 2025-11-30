@@ -3,10 +3,13 @@
 // Auth screens
 export 'auth/login_screen.dart';
 export 'auth/signup_screen.dart';
+export 'auth/profile_setup_screen.dart';
 
 // Core screens
 export 'splash_screen.dart';
 export 'main_shell.dart';
+export 'onboarding_screen.dart';
+export 'profile_screen.dart';
 
 // Home
 export 'home/home_screen.dart';

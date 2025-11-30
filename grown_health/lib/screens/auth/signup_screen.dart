@@ -38,17 +38,19 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
     if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
       return;
     }
 
-<<<<<<< HEAD:grown_health/lib/signup_screen.dart
-    setState(() => _loading = true);
-    try {
-      await AuthApi.register(email: email, password: password);
-      if (!mounted) return;
+    final success = await ref
+        .read(authProvider.notifier)
+        .register(email: email, password: password);
+
+    if (!mounted) return;
+
+    if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Account created! Let\'s set up your profile.'),
@@ -57,39 +59,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       Navigator.of(
         context,
       ).pushNamedAndRemoveUntil('/profile_setup', (route) => false);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      if (mounted) setState(() => _loading = false);
-=======
-    final success = await ref.read(authProvider.notifier).register(
-          email: email,
-          password: password,
-        );
-
-    if (!mounted) return;
-
-    if (success) {
-      final authState = ref.read(authProvider);
-      if (authState.status == AuthStatus.authenticated) {
-        Navigator.of(context).pushReplacementNamed('/home');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account created, please log in')),
-        );
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-      }
     } else {
       final error = ref.read(authProvider).error;
       if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error)));
       }
->>>>>>> b64884f59d8d82727d157147f2c34b84c67a4956:grown_health/lib/screens/auth/signup_screen.dart
     }
   }
 
@@ -264,8 +240,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context)
-                          .pushNamedAndRemoveUntil('/login', (r) => false);
+                      Navigator.of(
+                        context,
+                      ).pushNamedAndRemoveUntil('/login', (r) => false);
                     },
                     child: Text(
                       'Log in',
