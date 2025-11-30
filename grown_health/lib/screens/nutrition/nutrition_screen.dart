@@ -29,7 +29,7 @@ class NutritionScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _buildGoalCards(),
               const SizedBox(height: 24),
-              _buildRecipeOfDay(),
+              _buildRecipeOfDay(context),
               const SizedBox(height: 24),
               _buildMacroRatio(),
               const SizedBox(height: 24),
@@ -39,7 +39,7 @@ class NutritionScreen extends StatelessWidget {
               const SizedBox(height: 24),
               _buildNutritionTips(),
               const SizedBox(height: 24),
-              _buildQuickActions(),
+              _buildQuickActions(context),
               const SizedBox(height: 32),
             ],
           ),
@@ -80,7 +80,7 @@ class NutritionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecipeOfDay() {
+  Widget _buildRecipeOfDay(BuildContext context) {
     return Container(
       height: 190,
       decoration: BoxDecoration(
@@ -123,19 +123,32 @@ class NutritionScreen extends StatelessWidget {
           Positioned(
             right: 16,
             top: 24,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFAA3D50),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'View',
-                style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
+            child: GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Recipe details coming soon!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFAA3D50),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'View',
+                  style: GoogleFonts.inter(
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -330,7 +343,10 @@ class NutritionScreen extends StatelessWidget {
                 label: 'Balanced Meal',
                 icon: Icons.emoji_food_beverage_outlined,
               ),
-              _HabitIcon(label: 'Walk 30m', icon: Icons.directions_walk_rounded),
+              _HabitIcon(
+                label: 'Walk 30m',
+                icon: Icons.directions_walk_rounded,
+              ),
               _HabitIcon(label: 'Sleep 7h', icon: Icons.bedtime_outlined),
             ],
           ),
@@ -373,7 +389,7 @@ class NutritionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -394,16 +410,54 @@ class NutritionScreen extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           childAspectRatio: 1.5,
-          children: const [
-            QuickActionCard(label: 'Scan Food', icon: Icons.qr_code_scanner),
+          children: [
+            QuickActionCard(
+              label: 'Scan Food',
+              icon: Icons.qr_code_scanner,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Food scanner coming soon!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
             QuickActionCard(
               label: 'Log Meal',
               icon: Icons.restaurant_menu_rounded,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Meal logging coming soon!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
             ),
-            QuickActionCard(label: 'View History', icon: Icons.history_rounded),
+            QuickActionCard(
+              label: 'View History',
+              icon: Icons.history_rounded,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Nutrition history coming soon!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
             QuickActionCard(
               label: 'Set Reminder',
               icon: Icons.notifications_active_rounded,
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Nutrition reminders coming soon!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
             ),
           ],
         ),

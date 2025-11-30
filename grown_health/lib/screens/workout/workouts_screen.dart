@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class WorkoutsScreen extends StatelessWidget {
+import '../../providers/providers.dart';
+
+class WorkoutsScreen extends ConsumerWidget {
   const WorkoutsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -43,9 +46,9 @@ class WorkoutsScreen extends StatelessWidget {
               const SizedBox(height: 20),
               _buildProgressCard(),
               const SizedBox(height: 24),
-              _buildAbsHeader(),
+              _buildCategoriesHeader(),
               const SizedBox(height: 12),
-              _buildWorkoutList(context),
+              _buildCategoriesList(ref),
             ],
           ),
         ),
@@ -81,7 +84,10 @@ class WorkoutsScreen extends StatelessWidget {
             icon: Icons.category_outlined,
             highlighted: true,
           ),
-          _FilterChipCard(label: 'Body Scan', icon: Icons.favorite_border_rounded),
+          _FilterChipCard(
+            label: 'Body Scan',
+            icon: Icons.favorite_border_rounded,
+          ),
           _FilterChipCard(label: 'Steps', icon: Icons.directions_walk_rounded),
         ],
       ),
@@ -146,12 +152,12 @@ class WorkoutsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAbsHeader() {
+  Widget _buildCategoriesHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Abs',
+          'Exercise Categories',
           style: GoogleFonts.inter(
             textStyle: const TextStyle(
               fontSize: 18,
@@ -173,12 +179,37 @@ class WorkoutsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWorkoutList(BuildContext context) {
-    return Column(
-      children: List.generate(
-        5,
-        (index) => _WorkoutRow(
-          onTap: () => Navigator.of(context).pushNamed('/workout_detail'),
+  Widget _buildCategoriesList(WidgetRef ref) {
+    final asyncCategories = ref.watch(categoriesProvider);
+
+    return asyncCategories.when(
+      data: (categories) {
+        if (categories.isEmpty) {
+          return Text(
+            'No categories yet. Add some in the admin panel.',
+            style: GoogleFonts.inter(
+              textStyle: const TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          );
+        }
+
+        return Column(
+          children: [for (final c in categories) _WorkoutRow(title: c.name)],
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (err, stack) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Text(
+          'Failed to load categories',
+          style: GoogleFonts.inter(
+            textStyle: const TextStyle(fontSize: 13, color: Colors.redAccent),
+          ),
         ),
       ),
     );
@@ -198,13 +229,15 @@ class _FilterChipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color borderColor =
-        highlighted ? const Color(0xFFAA3D50) : Colors.grey.shade200;
-    final Color iconColor =
-        highlighted ? const Color(0xFFAA3D50) : Colors.grey.shade500;
+    final Color borderColor = highlighted
+        ? const Color(0xFFAA3D50)
+        : Colors.grey.shade200;
+    final Color iconColor = highlighted
+        ? const Color(0xFFAA3D50)
+        : Colors.grey.shade500;
 
     return Container(
-      width: 76,
+      width: 88,
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -250,11 +283,15 @@ class _ProgressRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: GoogleFonts.inter(textStyle: const TextStyle(fontSize: 13)),
+              style: GoogleFonts.inter(
+                textStyle: const TextStyle(fontSize: 13),
+              ),
             ),
             Text(
               valueText,
-              style: GoogleFonts.inter(textStyle: const TextStyle(fontSize: 13)),
+              style: GoogleFonts.inter(
+                textStyle: const TextStyle(fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -275,8 +312,9 @@ class _ProgressRow extends StatelessWidget {
 
 class _WorkoutRow extends StatelessWidget {
   final VoidCallback? onTap;
+  final String title;
 
-  const _WorkoutRow({this.onTap});
+  const _WorkoutRow({this.onTap, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -305,7 +343,7 @@ class _WorkoutRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Russian Twist',
+                    title,
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 15,
@@ -317,7 +355,10 @@ class _WorkoutRow extends StatelessWidget {
                   Text(
                     '30s   •   Beginner',
                     style: GoogleFonts.inter(
-                      textStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+                      textStyle: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ],

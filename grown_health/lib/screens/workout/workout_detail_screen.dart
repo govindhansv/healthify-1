@@ -43,7 +43,7 @@ class WorkoutDetailScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _buildStartButton(),
+      bottomNavigationBar: _buildStartButton(context),
     );
   }
 
@@ -155,36 +155,41 @@ class WorkoutDetailScreen extends StatelessWidget {
         const SizedBox(height: 12),
         const _HowToStep(
           index: 1,
-          text: 'Sit on the floor with knees bent and feet flat, leaning back slightly.',
+          text:
+              'Sit on the floor with knees bent and feet flat, leaning back slightly.',
         ),
         const _HowToStep(
           index: 2,
-          text: 'Lift your feet off the ground if possible, balancing on your sit bones.',
+          text:
+              'Lift your feet off the ground if possible, balancing on your sit bones.',
         ),
         const _HowToStep(
           index: 3,
-          text: 'Clasp your hands together or hold a weight in front of your chest.',
+          text:
+              'Clasp your hands together or hold a weight in front of your chest.',
         ),
         const _HowToStep(
           index: 4,
-          text: 'Rotate your torso to one side, bringing your hands toward the floor beside your hip.',
+          text:
+              'Rotate your torso to one side, bringing your hands toward the floor beside your hip.',
         ),
         const _HowToStep(
           index: 5,
-          text: 'Rotate to the opposite side in a controlled motion, keeping your core engaged.',
+          text:
+              'Rotate to the opposite side in a controlled motion, keeping your core engaged.',
         ),
       ],
     );
   }
 
-  Widget _buildStartButton() {
+  Widget _buildStartButton(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: SizedBox(
         width: double.infinity,
         height: 50,
         child: ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () => Navigator.of(context).pushNamed('/player'),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFAA3D50),
             shape: RoundedRectangleBorder(

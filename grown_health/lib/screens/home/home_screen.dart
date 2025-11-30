@@ -121,7 +121,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.notifications_none_rounded),
-              onPressed: () {},
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No new notifications'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 4),
             Builder(
@@ -180,13 +187,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
             ),
-            Text(
-              'See all',
-              style: GoogleFonts.inter(
-                textStyle: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.redAccent,
-                  fontWeight: FontWeight.w500,
+            GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Medicine reminders coming soon!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+              child: Text(
+                'See all',
+                style: GoogleFonts.inter(
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
@@ -200,13 +217,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          'Add',
-          style: GoogleFonts.inter(
-            textStyle: const TextStyle(
-              fontSize: 14,
-              color: Colors.redAccent,
-              fontWeight: FontWeight.w500,
+        GestureDetector(
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Add medicine reminder - coming soon!'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+          child: Text(
+            'Add',
+            style: GoogleFonts.inter(
+              textStyle: const TextStyle(
+                fontSize: 14,
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),

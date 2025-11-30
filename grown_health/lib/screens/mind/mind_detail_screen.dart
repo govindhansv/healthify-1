@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'meditation_player_screen.dart';
-
 class MindDetailScreen extends StatelessWidget {
   const MindDetailScreen({super.key});
 
@@ -42,23 +40,74 @@ class MindDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  // Illustration placeholder
+                  // Main Illustration with decorative lines
                   Center(
-                    child: Container(
-                      width: 220,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE5D0),
-                        borderRadius: BorderRadius.circular(32),
-                      ),
-                      child: const Icon(
-                        Icons.self_improvement_rounded,
-                        size: 80,
-                        color: Color(0xFFAA3D50),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Left decorative line
+                        Positioned(
+                          left: 20,
+                          child: Container(
+                            width: 4,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFE5D0),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        // Right decorative line
+                        Positioned(
+                          right: 20,
+                          child: Container(
+                            width: 4,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFE5D0),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        // Main illustration
+                        Container(
+                          width: 200,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFE5D0),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Image.asset(
+                            'assets/mind/morning_mindfulness.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.self_improvement_rounded,
+                                size: 80,
+                                color: Color(0xFFAA3D50),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Instruction text below illustration
+                  Center(
+                    child: Text(
+                      'Find a comfortable position and focus on your breath.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        textStyle: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // Chips row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -68,6 +117,7 @@ class MindDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  // Stats row
                   Row(
                     children: [
                       _buildStatCard(
@@ -90,6 +140,7 @@ class MindDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  // About section
                   Text(
                     'About',
                     style: GoogleFonts.inter(
@@ -110,6 +161,7 @@ class MindDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // Benefits section
                   Text(
                     'Benefits',
                     style: GoogleFonts.inter(
@@ -131,6 +183,7 @@ class MindDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  // Instructions section
                   Text(
                     'Instructions',
                     style: GoogleFonts.inter(
@@ -155,69 +208,79 @@ class MindDetailScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Bottom bar with Start Meditation + favorite icon
+          // Bottom session bar with play button
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withOpacity(0.06),
                   blurRadius: 12,
                   offset: const Offset(0, -2),
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const MeditationPlayerScreen(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Session',
+                          style: GoogleFonts.inter(
+                            textStyle: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007BFF),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
                         ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '10 min · Mindfulness',
+                          style: GoogleFonts.inter(
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      // TODO: Start meditation / play audio
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Starting meditation...'),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF007BFF),
+                        shape: BoxShape.circle,
                       ),
-                      icon: const Icon(
+                      child: const Icon(
                         Icons.play_arrow_rounded,
                         color: Colors.white,
-                      ),
-                      label: Text(
-                        'Start Meditation',
-                        style: GoogleFonts.inter(
-                          textStyle: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                        size: 28,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: const Icon(
-                    Icons.favorite_border_rounded,
-                    color: Color(0xFFAA3D50),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

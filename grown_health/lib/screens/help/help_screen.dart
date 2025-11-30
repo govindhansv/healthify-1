@@ -36,15 +36,26 @@ class _HelpScreenState extends State<HelpScreen> {
   ];
 
   void _goNext() {
+    // Require the user to select an option before proceeding
+    if (_selectedOption == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select an answer before continuing.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     if (_questionIndex < _questions.length - 1) {
       setState(() {
         _questionIndex++;
         _selectedOption = null;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Assessment completed (demo).')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Assessment completed.')));
     }
   }
 
@@ -110,10 +121,7 @@ class _HelpScreenState extends State<HelpScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10),
         ],
       ),
       child: Padding(
