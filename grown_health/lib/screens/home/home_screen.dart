@@ -15,10 +15,13 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _displayName = 'User';
+  String _greeting = 'Good Morning!';
+  String _selectedBundleGroup = 'Arm';
 
   @override
   void initState() {
     super.initState();
+    _updateGreeting();
     _loadUserName();
   }
 
@@ -35,9 +38,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  void _updateGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      _greeting = 'Good Morning!';
+    } else if (hour < 17) {
+      _greeting = 'Good Afternoon!';
+    } else {
+      _greeting = 'Good Evening!';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final displayName = _displayName;
+    final greeting = _greeting;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -54,7 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 8),
-                    _buildHeader(displayName),
+                    _buildHeader(greeting, displayName),
                     const SizedBox(height: 16),
                     _buildSearchBar(),
                     const SizedBox(height: 24),
@@ -90,7 +105,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(String displayName) {
+  Widget _buildHeader(String greeting, String displayName) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +114,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Good Morning!',
+              greeting,
               style: GoogleFonts.inter(
                 textStyle: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
@@ -296,45 +311,126 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        children: const [
-          _TabPill(label: 'Arm', selected: true),
-          _TabPill(label: 'Chest'),
-          _TabPill(label: 'Leg'),
-          _TabPill(label: 'Shoulder'),
+        children: [
+          _TabPill(
+            label: 'Arm',
+            selected: _selectedBundleGroup == 'Arm',
+            onTap: () => setState(() => _selectedBundleGroup = 'Arm'),
+          ),
+          _TabPill(
+            label: 'Chest',
+            selected: _selectedBundleGroup == 'Chest',
+            onTap: () => setState(() => _selectedBundleGroup = 'Chest'),
+          ),
+          _TabPill(
+            label: 'Leg',
+            selected: _selectedBundleGroup == 'Leg',
+            onTap: () => setState(() => _selectedBundleGroup = 'Leg'),
+          ),
+          _TabPill(
+            label: 'Shoulder',
+            selected: _selectedBundleGroup == 'Shoulder',
+            onTap: () => setState(() => _selectedBundleGroup = 'Shoulder'),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildBundlesList(BuildContext context) {
-    return Column(
-      children: [
-        BundleCard(
-          title: '30 Days Challenge',
-          subtitle: '7 Workouts  •  7 Exercises',
-          days: '30 Days',
-          level: 'Beginner',
-          color: const Color(0xFF4DD0E1),
-          onTap: () => Navigator.of(context).pushNamed('/challenge'),
-        ),
-        const SizedBox(height: 12),
-        const BundleCard(
-          title: '10 Days Challenge',
-          subtitle: '5 Workouts  •  20 mins',
-          days: '10 Days',
-          level: 'Beginner',
-          color: Color(0xFF80DEEA),
-        ),
-        const SizedBox(height: 12),
-        const BundleCard(
-          title: '5 Days Challenge',
-          subtitle: '3 Workouts  •  10 mins',
-          days: '5 Days',
-          level: 'Beginner',
-          color: Color(0xFFB39DDB),
-        ),
-      ],
-    );
+    // For now, show different hardcoded bundles per group.
+    // These can later be driven by API.
+    if (_selectedBundleGroup == 'Arm') {
+      return Column(
+        children: [
+          BundleCard(
+            title: '30 Days Arm Challenge',
+            subtitle: '7 Workouts  •  7 Exercises',
+            days: '30 Days',
+            level: 'Beginner',
+            color: const Color(0xFFAA3D50),
+            onTap: () => Navigator.of(context).pushNamed('/challenge'),
+          ),
+          const SizedBox(height: 12),
+          const BundleCard(
+            title: '10 Days Arm Blast',
+            subtitle: '5 Workouts  •  20 mins',
+            days: '10 Days',
+            level: 'Beginner',
+            color: Color(0xFFD46A7A),
+          ),
+          const SizedBox(height: 12),
+          const BundleCard(
+            title: '5 Days Quick Arms',
+            subtitle: '3 Workouts  •  10 mins',
+            days: '5 Days',
+            level: 'Beginner',
+            color: Color(0xFFF2C3CC),
+          ),
+        ],
+      );
+    } else if (_selectedBundleGroup == 'Chest') {
+      return Column(
+        children: const [
+          BundleCard(
+            title: 'Chest Strength Builder',
+            subtitle: '5 Workouts  •  15 mins',
+            days: '14 Days',
+            level: 'Intermediate',
+            color: Color(0xFFAA3D50),
+          ),
+          SizedBox(height: 12),
+          BundleCard(
+            title: 'Push-up Power',
+            subtitle: '4 Workouts  •  12 mins',
+            days: '7 Days',
+            level: 'Beginner',
+            color: Color(0xFFD46A7A),
+          ),
+        ],
+      );
+    } else if (_selectedBundleGroup == 'Leg') {
+      return Column(
+        children: const [
+          BundleCard(
+            title: 'Leg Day Essentials',
+            subtitle: '6 Workouts  •  18 mins',
+            days: '21 Days',
+            level: 'Beginner',
+            color: Color(0xFFAA3D50),
+          ),
+          SizedBox(height: 12),
+          BundleCard(
+            title: 'Glutes & Thighs',
+            subtitle: '5 Workouts  •  20 mins',
+            days: '10 Days',
+            level: 'Intermediate',
+            color: Color(0xFFD46A7A),
+          ),
+        ],
+      );
+    } else {
+      // Shoulder
+      return Column(
+        children: const [
+          BundleCard(
+            title: 'Strong Shoulders',
+            subtitle: '4 Workouts  •  15 mins',
+            days: '12 Days',
+            level: 'Beginner',
+            color: Color(0xFFAA3D50),
+          ),
+          SizedBox(height: 12),
+          BundleCard(
+            title: 'Posture Fix',
+            subtitle: '3 Workouts  •  10 mins',
+            days: '7 Days',
+            level: 'Beginner',
+            color: Color(0xFFD46A7A),
+          ),
+        ],
+      );
+    }
   }
 
   Widget _buildRecommendedSection() {
@@ -359,18 +455,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(height: 16),
         const RecommendedCard(
-          backgroundColor: Color(0xFF9C27B0),
-          accentColor: Color(0xFFAB47BC),
+          backgroundColor: Color(0xFFAA3D50),
+          accentColor: Color(0xFFD46A7A),
         ),
         const SizedBox(height: 16),
         const RecommendedCard(
-          backgroundColor: Color(0xFF009688),
-          accentColor: Color(0xFF26A69A),
+          backgroundColor: Color(0xFFD46A7A),
+          accentColor: Color(0xFFF2C3CC),
         ),
         const SizedBox(height: 16),
         const RecommendedCard(
-          backgroundColor: Color(0xFFFFA000),
-          accentColor: Color(0xFFFFB74D),
+          backgroundColor: Color(0xFFF2C3CC),
+          accentColor: Color(0xFFAA3D50),
         ),
       ],
     );
@@ -380,25 +476,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 class _TabPill extends StatelessWidget {
   final String label;
   final bool selected;
+  final VoidCallback? onTap;
 
-  const _TabPill({required this.label, this.selected = false});
+  const _TabPill({required this.label, this.selected = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: selected ? const Color(0xFFAA3D50) : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        style: GoogleFonts.inter(
-          textStyle: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: selected ? Colors.white : Colors.black,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFAA3D50) : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            textStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: selected ? Colors.white : Colors.black,
+            ),
           ),
         ),
       ),

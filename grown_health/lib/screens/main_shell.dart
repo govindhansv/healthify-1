@@ -57,7 +57,7 @@ class _SharedBottomNav extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: const Color(0xFFAA3D50),
           borderRadius: BorderRadius.circular(32),
@@ -65,44 +65,50 @@ class _SharedBottomNav extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Left white pill for Body/Home
-            GestureDetector(
-              onTap: () => onTap(0),
-              child: Container(
-                width: 64,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Center(
-                  child: Icon(Icons.home_rounded, color: Color(0xFFAA3D50)),
-                ),
+            Expanded(
+              child: _BottomNavItem(
+                label: 'Home',
+                index: 0,
+                currentIndex: currentIndex,
+                onTap: onTap,
+                icon: Icons.home_rounded,
               ),
             ),
-            _BottomNavLabelShared(
-              label: 'Body',
-              index: 1,
-              currentIndex: currentIndex,
-              onTap: onTap,
+            Expanded(
+              child: _BottomNavItem(
+                label: 'Body',
+                index: 1,
+                currentIndex: currentIndex,
+                onTap: onTap,
+                icon: Icons.person_outline_rounded,
+              ),
             ),
-            _BottomNavLabelShared(
-              label: 'Nutrition',
-              index: 2,
-              currentIndex: currentIndex,
-              onTap: onTap,
+            Expanded(
+              child: _BottomNavItem(
+                label: 'Nutrition',
+                index: 2,
+                currentIndex: currentIndex,
+                onTap: onTap,
+                icon: Icons.rice_bowl_outlined,
+              ),
             ),
-            _BottomNavLabelShared(
-              label: 'Help',
-              index: 3,
-              currentIndex: currentIndex,
-              onTap: onTap,
+            Expanded(
+              child: _BottomNavItem(
+                label: 'Help',
+                index: 3,
+                currentIndex: currentIndex,
+                onTap: onTap,
+                icon: Icons.account_circle_outlined,
+              ),
             ),
-            _BottomNavLabelShared(
-              label: 'Mind',
-              index: 4,
-              currentIndex: currentIndex,
-              onTap: onTap,
+            Expanded(
+              child: _BottomNavItem(
+                label: 'Mind',
+                index: 4,
+                currentIndex: currentIndex,
+                onTap: onTap,
+                icon: Icons.emoji_emotions_outlined,
+              ),
             ),
           ],
         ),
@@ -111,52 +117,72 @@ class _SharedBottomNav extends StatelessWidget {
   }
 }
 
-class _BottomNavLabelShared extends StatelessWidget {
+class _BottomNavItem extends StatelessWidget {
   final String label;
   final int index;
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final IconData icon;
 
-  const _BottomNavLabelShared({
+  const _BottomNavItem({
     required this.label,
     required this.index,
     required this.currentIndex,
     required this.onTap,
+    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    const Color textColor = Color(0xFFF6C5CF);
+    final bool isSelected = index == currentIndex;
 
-    IconData icon;
-    switch (label) {
-      case 'Body':
-        icon = Icons.person_outline_rounded;
-        break;
-      case 'Nutrition':
-        icon = Icons.rice_bowl_outlined;
-        break;
-      case 'Help':
-        icon = Icons.account_circle_outlined;
-        break;
-      case 'Mind':
-        icon = Icons.emoji_emotions_outlined;
-        break;
-      default:
-        icon = Icons.circle_outlined;
+    if (isSelected) {
+      // White pill for selected tab
+      return GestureDetector(
+        onTap: () => onTap(index),
+        child: Container(
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 20, color: const Color(0xFFAA3D50)),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  textStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFAA3D50),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
+    // Unselected state: simple icon + label
     return GestureDetector(
       onTap: () => onTap(index),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20, color: textColor),
+          const SizedBox(height: 4),
+          Icon(icon, size: 20, color: const Color(0xFFF6C5CF)),
           const SizedBox(height: 4),
           Text(
             label,
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(fontSize: 11, color: textColor),
+              textStyle: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFFF6C5CF),
+              ),
             ),
           ),
         ],
