@@ -42,7 +42,7 @@ class WorkoutsScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               _buildSearchBar(),
               const SizedBox(height: 16),
-              _buildFilterChips(),
+              _buildFilterChips(context),
               const SizedBox(height: 20),
               _buildProgressCard(),
               const SizedBox(height: 24),
@@ -72,23 +72,33 @@ class WorkoutsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFilterChips() {
+  Widget _buildFilterChips(BuildContext context) {
     return SizedBox(
       height: 70,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          _FilterChipCard(label: 'Start', icon: Icons.play_arrow_rounded),
+        children: [
           _FilterChipCard(
+            label: 'Start',
+            icon: Icons.play_arrow_rounded,
+            onTap: () {
+              // Quick start: go straight to the workout player.
+              Navigator.of(context).pushNamed('/player');
+            },
+          ),
+          const _FilterChipCard(
             label: 'Categories',
             icon: Icons.category_outlined,
             highlighted: true,
           ),
-          _FilterChipCard(
+          const _FilterChipCard(
             label: 'Body Scan',
             icon: Icons.favorite_border_rounded,
           ),
-          _FilterChipCard(label: 'Steps', icon: Icons.directions_walk_rounded),
+          const _FilterChipCard(
+            label: 'Steps',
+            icon: Icons.directions_walk_rounded,
+          ),
         ],
       ),
     );
@@ -220,11 +230,13 @@ class _FilterChipCard extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool highlighted;
+  final VoidCallback? onTap;
 
   const _FilterChipCard({
     required this.label,
     required this.icon,
     this.highlighted = false,
+    this.onTap,
   });
 
   @override
@@ -236,25 +248,30 @@ class _FilterChipCard extends StatelessWidget {
         ? const Color(0xFFAA3D50)
         : Colors.grey.shade500;
 
-    return Container(
-      width: 88,
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: highlighted ? 1.2 : 1),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 18, color: iconColor),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(textStyle: const TextStyle(fontSize: 11)),
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 88,
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: highlighted ? 1.2 : 1),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                textStyle: const TextStyle(fontSize: 11),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -319,7 +336,12 @@ class _WorkoutRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap:
+          onTap ??
+          () {
+            // Default behaviour: open workout detail when tapping a row.
+            Navigator.of(context).pushNamed('/workout_detail');
+          },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),

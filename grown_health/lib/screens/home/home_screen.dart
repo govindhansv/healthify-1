@@ -17,6 +17,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _displayName = 'User';
   String _greeting = 'Good Morning!';
   String _selectedBundleGroup = 'Arm';
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -172,6 +173,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildSearchBar() {
     return TextField(
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value.trim().toLowerCase();
+        });
+      },
       decoration: InputDecoration(
         hintText: 'Search Workouts',
         prefixIcon: const Icon(Icons.search),
@@ -204,12 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             GestureDetector(
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Medicine reminders coming soon!'),
-                    duration: Duration(seconds: 1),
-                  ),
-                );
+                Navigator.of(context).pushNamed('/medicine_reminders');
               },
               child: Text(
                 'See all',
@@ -338,99 +339,183 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBundlesList(BuildContext context) {
-    // For now, show different hardcoded bundles per group.
+    // For now, show different hardcoded bundles per group and filter by search.
     // These can later be driven by API.
     if (_selectedBundleGroup == 'Arm') {
+      final items = [
+        {
+          'title': '30 Days Arm Challenge',
+          'subtitle': '7 Workouts  •  7 Exercises',
+          'days': '30 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFAA3D50),
+          'onTap': () => Navigator.of(context).pushNamed('/challenge'),
+        },
+        {
+          'title': '10 Days Arm Blast',
+          'subtitle': '5 Workouts  •  20 mins',
+          'days': '10 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFD46A7A),
+        },
+        {
+          'title': '5 Days Quick Arms',
+          'subtitle': '3 Workouts  •  10 mins',
+          'days': '5 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFF2C3CC),
+        },
+      ];
+
+      final filtered = _filterBundles(items);
+      if (filtered.isEmpty) {
+        return _buildNoSearchResults();
+      }
+
       return Column(
         children: [
-          BundleCard(
-            title: '30 Days Arm Challenge',
-            subtitle: '7 Workouts  •  7 Exercises',
-            days: '30 Days',
-            level: 'Beginner',
-            color: const Color(0xFFAA3D50),
-            onTap: () => Navigator.of(context).pushNamed('/challenge'),
-          ),
-          const SizedBox(height: 12),
-          const BundleCard(
-            title: '10 Days Arm Blast',
-            subtitle: '5 Workouts  •  20 mins',
-            days: '10 Days',
-            level: 'Beginner',
-            color: Color(0xFFD46A7A),
-          ),
-          const SizedBox(height: 12),
-          const BundleCard(
-            title: '5 Days Quick Arms',
-            subtitle: '3 Workouts  •  10 mins',
-            days: '5 Days',
-            level: 'Beginner',
-            color: Color(0xFFF2C3CC),
-          ),
+          for (var i = 0; i < filtered.length; i++) ...[
+            BundleCard(
+              title: filtered[i]['title'] as String,
+              subtitle: filtered[i]['subtitle'] as String,
+              days: filtered[i]['days'] as String,
+              level: filtered[i]['level'] as String,
+              color: filtered[i]['color'] as Color,
+              onTap: filtered[i]['onTap'] as void Function()?,
+            ),
+            if (i != filtered.length - 1) const SizedBox(height: 12),
+          ],
         ],
       );
     } else if (_selectedBundleGroup == 'Chest') {
+      final items = [
+        {
+          'title': 'Chest Strength Builder',
+          'subtitle': '5 Workouts  •  15 mins',
+          'days': '14 Days',
+          'level': 'Intermediate',
+          'color': const Color(0xFFAA3D50),
+        },
+        {
+          'title': 'Push-up Power',
+          'subtitle': '4 Workouts  •  12 mins',
+          'days': '7 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFD46A7A),
+        },
+      ];
+      final filtered = _filterBundles(items);
+      if (filtered.isEmpty) {
+        return _buildNoSearchResults();
+      }
       return Column(
-        children: const [
-          BundleCard(
-            title: 'Chest Strength Builder',
-            subtitle: '5 Workouts  •  15 mins',
-            days: '14 Days',
-            level: 'Intermediate',
-            color: Color(0xFFAA3D50),
-          ),
-          SizedBox(height: 12),
-          BundleCard(
-            title: 'Push-up Power',
-            subtitle: '4 Workouts  •  12 mins',
-            days: '7 Days',
-            level: 'Beginner',
-            color: Color(0xFFD46A7A),
-          ),
+        children: [
+          for (var i = 0; i < filtered.length; i++) ...[
+            BundleCard(
+              title: filtered[i]['title'] as String,
+              subtitle: filtered[i]['subtitle'] as String,
+              days: filtered[i]['days'] as String,
+              level: filtered[i]['level'] as String,
+              color: filtered[i]['color'] as Color,
+            ),
+            if (i != filtered.length - 1) const SizedBox(height: 12),
+          ],
         ],
       );
     } else if (_selectedBundleGroup == 'Leg') {
+      final items = [
+        {
+          'title': 'Leg Day Essentials',
+          'subtitle': '6 Workouts  •  18 mins',
+          'days': '21 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFAA3D50),
+        },
+        {
+          'title': 'Glutes & Thighs',
+          'subtitle': '5 Workouts  •  20 mins',
+          'days': '10 Days',
+          'level': 'Intermediate',
+          'color': const Color(0xFFD46A7A),
+        },
+      ];
+      final filtered = _filterBundles(items);
+      if (filtered.isEmpty) {
+        return _buildNoSearchResults();
+      }
       return Column(
-        children: const [
-          BundleCard(
-            title: 'Leg Day Essentials',
-            subtitle: '6 Workouts  •  18 mins',
-            days: '21 Days',
-            level: 'Beginner',
-            color: Color(0xFFAA3D50),
-          ),
-          SizedBox(height: 12),
-          BundleCard(
-            title: 'Glutes & Thighs',
-            subtitle: '5 Workouts  •  20 mins',
-            days: '10 Days',
-            level: 'Intermediate',
-            color: Color(0xFFD46A7A),
-          ),
+        children: [
+          for (var i = 0; i < filtered.length; i++) ...[
+            BundleCard(
+              title: filtered[i]['title'] as String,
+              subtitle: filtered[i]['subtitle'] as String,
+              days: filtered[i]['days'] as String,
+              level: filtered[i]['level'] as String,
+              color: filtered[i]['color'] as Color,
+            ),
+            if (i != filtered.length - 1) const SizedBox(height: 12),
+          ],
         ],
       );
     } else {
       // Shoulder
+      final items = [
+        {
+          'title': 'Strong Shoulders',
+          'subtitle': '4 Workouts  •  15 mins',
+          'days': '12 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFAA3D50),
+        },
+        {
+          'title': 'Posture Fix',
+          'subtitle': '3 Workouts  •  10 mins',
+          'days': '7 Days',
+          'level': 'Beginner',
+          'color': const Color(0xFFD46A7A),
+        },
+      ];
+      final filtered = _filterBundles(items);
+      if (filtered.isEmpty) {
+        return _buildNoSearchResults();
+      }
       return Column(
-        children: const [
-          BundleCard(
-            title: 'Strong Shoulders',
-            subtitle: '4 Workouts  •  15 mins',
-            days: '12 Days',
-            level: 'Beginner',
-            color: Color(0xFFAA3D50),
-          ),
-          SizedBox(height: 12),
-          BundleCard(
-            title: 'Posture Fix',
-            subtitle: '3 Workouts  •  10 mins',
-            days: '7 Days',
-            level: 'Beginner',
-            color: Color(0xFFD46A7A),
-          ),
+        children: [
+          for (var i = 0; i < filtered.length; i++) ...[
+            BundleCard(
+              title: filtered[i]['title'] as String,
+              subtitle: filtered[i]['subtitle'] as String,
+              days: filtered[i]['days'] as String,
+              level: filtered[i]['level'] as String,
+              color: filtered[i]['color'] as Color,
+            ),
+            if (i != filtered.length - 1) const SizedBox(height: 12),
+          ],
         ],
       );
     }
+  }
+
+  List<Map<String, Object?>> _filterBundles(List<Map<String, Object?>> items) {
+    if (_searchQuery.isEmpty) return items;
+    return items
+        .where(
+          (item) =>
+              (item['title'] as String).toLowerCase().contains(_searchQuery),
+        )
+        .toList();
+  }
+
+  Widget _buildNoSearchResults() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Text(
+        'No workouts match your search',
+        style: GoogleFonts.inter(
+          textStyle: const TextStyle(fontSize: 14, color: Colors.black54),
+        ),
+      ),
+    );
   }
 
   Widget _buildRecommendedSection() {
