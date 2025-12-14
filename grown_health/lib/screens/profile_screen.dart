@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/auth_provider.dart';
 import '../services/profile_service.dart';
+import '../services/health_metrics_service.dart';
 import '../models/profile_model.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -18,8 +20,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   ProfileModel? _profile;
   bool _loading = true;
   String? _error;
-  
-  // Health metrics (not in Profile API, stored locally)
+
+  // Health metrics from API
   String _cholesterol = 'Not set';
   String _bloodSugar = 'Not set';
   String _bloodPressure = 'Not set';
@@ -30,21 +32,75 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _loadProfile();
     _loadHealthMetrics();
   }
-  
+
   Future<void> _loadHealthMetrics() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userEmail = ref.read(authProvider).user?.email ?? '';
-    
-    setState(() {
-      _cholesterol = prefs.getString('${userEmail}_cholesterol') ?? 'Not set';
-      _bloodSugar = prefs.getString('${userEmail}_bloodSugar') ?? 'Not set';
-      _bloodPressure = prefs.getString('${userEmail}_bloodPressure') ?? 'Not set';
-    });
+    final token = ref.read(authProvider).user?.token;
+    if (token == null) return;
+
+    try {
+      final service = HealthMetricsService(token);
+      final metrics = await service.getHealthMetrics();
+
+      if (mounted) {
+        setState(() {
+          _cholesterol = metrics.cholesterolDisplay;
+          _bloodSugar = metrics.bloodSugarDisplay;
+          _bloodPressure = metrics.bloodPressureDisplay;
+        });
+      }
+      debugPrint('✅ Health metrics loaded from API');
+    } catch (e) {
+      debugPrint('❌ Failed to load health metrics: $e');
+      // Fallback to local storage
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = ref.read(authProvider).user?.email ?? '';
+
+      if (mounted) {
+        setState(() {
+          _cholesterol =
+              prefs.getString('${userEmail}_cholesterol') ?? 'Not set';
+          _bloodSugar = prefs.getString('${userEmail}_bloodSugar') ?? 'Not set';
+          _bloodPressure =
+              prefs.getString('${userEmail}_bloodPressure') ?? 'Not set';
+        });
+      }
+    }
+  }
+
+  Future<void> _saveProfileLocally(Map<String, dynamic> data) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = ref.read(authProvider).user?.email ?? '';
+      if (userEmail.isEmpty) return;
+
+      await prefs.setString('profile_data_$userEmail', jsonEncode(data));
+      debugPrint('💾 Profile saved locally for $userEmail');
+    } catch (e) {
+      debugPrint('❌ Failed to save profile locally: $e');
+    }
+  }
+
+  Future<ProfileModel?> _loadProfileLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userEmail = ref.read(authProvider).user?.email ?? '';
+      if (userEmail.isEmpty) return null;
+
+      final jsonStr = prefs.getString('profile_data_$userEmail');
+      if (jsonStr != null) {
+        final data = jsonDecode(jsonStr) as Map<String, dynamic>;
+        debugPrint('💾 Loaded local profile for $userEmail');
+        return ProfileModel.fromJson(data);
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to load local profile: $e');
+    }
+    return null;
   }
 
   Future<void> _loadProfile() async {
     final token = ref.read(authProvider).user?.token;
-    
+
     if (token == null) {
       setState(() {
         _error = 'Not logged in';
@@ -60,35 +116,68 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     try {
       final profileService = ProfileService(token);
-      final profile = await profileService.getProfile();
-      
+      final apiProfile = await profileService.getProfile();
+
       // Debug: Print what we received
-      debugPrint('📱 Profile loaded:');
-      debugPrint('  Name: ${profile.name}');
-      debugPrint('  Email: ${profile.email}');
-      debugPrint('  Age: ${profile.age}');
-      debugPrint('  Gender: ${profile.gender}');
-      debugPrint('  Weight: ${profile.weight}');
-      debugPrint('  Height: ${profile.height}');
-      
+      debugPrint('📱 API Profile loaded:');
+      debugPrint('  Name: "${apiProfile.name}"');
+      debugPrint('  Age: ${apiProfile.age}');
+
+      // Check if API returned empty data (backend bug)
+      ProfileModel finalProfile = apiProfile;
+
+      if (apiProfile.age == null || apiProfile.weight == null) {
+        debugPrint(
+          '⚠️ API returned incomplete data. Checking local storage...',
+        );
+        final localProfile = await _loadProfileLocally();
+
+        if (localProfile != null) {
+          debugPrint('✅ Using local profile data as fallback');
+          // Merge API data (like name/email) with local data (age/weight)
+          finalProfile = apiProfile.copyWith(
+            age: localProfile.age,
+            gender: localProfile.gender,
+            weight: localProfile.weight,
+            height: localProfile.height,
+            isProfileComplete: localProfile.isProfileComplete,
+          );
+
+          // If name is missing in API but present locally, use local
+          if (finalProfile.name == null || finalProfile.name!.isEmpty) {
+            finalProfile = finalProfile.copyWith(name: localProfile.name);
+          }
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _profile = profile;
+          _profile = finalProfile;
           _loading = false;
           _error = null;
+        });
+
+        // Force another setState to ensure UI updates
+        Future.microtask(() {
+          if (mounted) {
+            setState(() {});
+          }
         });
       }
     } catch (e) {
       debugPrint('❌ Profile error: $e');
-      
+
       // Check if it's a "profile not found" error
       final errorMsg = e.toString().toLowerCase();
       if (errorMsg.contains('not found') || errorMsg.contains('404')) {
         // Profile doesn't exist - navigate to complete profile screen
         if (mounted) {
-          final completed = await Navigator.of(context).pushNamed('/profile-complete');
-          if (completed == true) {
-            // Profile was completed, reload
+          final result = await Navigator.of(
+            context,
+          ).pushNamed('/profile-complete');
+          if (result != null && result is Map<String, dynamic>) {
+            // Profile was completed, save locally and reload
+            await _saveProfileLocally(result);
             _loadProfile();
           } else {
             setState(() {
@@ -98,7 +187,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           }
         }
       } else {
-        if (mounted) {
+        // Try to load locally on error
+        final localProfile = await _loadProfileLocally();
+        if (localProfile != null && mounted) {
+          setState(() {
+            _profile = localProfile;
+            _loading = false;
+            _error = null;
+          });
+        } else if (mounted) {
           setState(() {
             _error = e.toString().replaceFirst('Exception: ', '');
             _loading = false;
@@ -111,7 +208,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _handleLogout(BuildContext context) async {
     // Use auth provider's logout which clears all data
     await ref.read(authProvider.notifier).logout();
-    
+
     if (!context.mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
   }
@@ -148,8 +245,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _buildErrorView()
-              : _buildProfileView(userEmail),
+          ? _buildErrorView()
+          : _buildProfileView(userEmail),
     );
   }
 
@@ -439,9 +536,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _showEditHealthMetricsDialog() async {
-    final cholController = TextEditingController(text: _cholesterol == 'Not set' ? '' : _cholesterol);
-    final sugarController = TextEditingController(text: _bloodSugar == 'Not set' ? '' : _bloodSugar);
-    final bpController = TextEditingController(text: _bloodPressure == 'Not set' ? '' : _bloodPressure);
+    final cholController = TextEditingController(
+      text: _cholesterol == 'Not set'
+          ? ''
+          : _cholesterol.replaceAll(RegExp(r'[^0-9.]'), ''),
+    );
+    final sugarController = TextEditingController(
+      text: _bloodSugar == 'Not set'
+          ? ''
+          : _bloodSugar.replaceAll(RegExp(r'[^0-9.]'), ''),
+    );
+
+    // Parse current BP
+    String currentSystolic = '';
+    String currentDiastolic = '';
+    if (_bloodPressure != 'Not set' && _bloodPressure.contains('/')) {
+      final parts = _bloodPressure.split('/');
+      if (parts.length == 2) {
+        currentSystolic = parts[0].trim();
+        currentDiastolic = parts[1].trim();
+      }
+    }
+
+    final systolicController = TextEditingController(text: currentSystolic);
+    final diastolicController = TextEditingController(text: currentDiastolic);
 
     final result = await showDialog<bool>(
       context: context,
@@ -454,23 +572,70 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 TextField(
                   controller: cholController,
+                  keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Cholesterol (e.g. 180 mg/dL)',
+                    labelText: 'Cholesterol (mg/dL)',
+                    hintText: 'e.g. 180',
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: sugarController,
+                  keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
-                    labelText: 'Blood Sugar - Fasting (e.g. 95 mg/dL)',
+                    labelText: 'Blood Sugar - Fasting (mg/dL)',
+                    hintText: 'e.g. 95',
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: bpController,
-                  decoration: const InputDecoration(
-                    labelText: 'Blood Pressure (e.g. 120/80)',
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Blood Pressure (mmHg)',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: systolicController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Systolic',
+                          hintText: '120',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        '/',
+                        style: TextStyle(fontSize: 20, color: Colors.grey),
+                      ),
+                    ),
+                    Expanded(
+                      child: TextField(
+                        controller: diastolicController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Diastolic',
+                          hintText: '80',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -490,30 +655,115 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (result == true) {
-      final prefs = await SharedPreferences.getInstance();
+      final token = ref.read(authProvider).user?.token;
       final userEmail = ref.read(authProvider).user?.email ?? '';
-      
-      final newChol = cholController.text.trim().isEmpty ? 'Not set' : cholController.text.trim();
-      final newSugar = sugarController.text.trim().isEmpty ? 'Not set' : sugarController.text.trim();
-      final newBp = bpController.text.trim().isEmpty ? 'Not set' : bpController.text.trim();
-      
-      await prefs.setString('${userEmail}_cholesterol', newChol);
-      await prefs.setString('${userEmail}_bloodSugar', newSugar);
-      await prefs.setString('${userEmail}_bloodPressure', newBp);
-      
-      setState(() {
-        _cholesterol = newChol;
-        _bloodSugar = newSugar;
-        _bloodPressure = newBp;
-      });
-      
+
+      final newChol = cholController.text.trim();
+      final newSugar = sugarController.text.trim();
+
+      // Combine BP
+      final sys = systolicController.text.trim();
+      final dia = diastolicController.text.trim();
+      String newBp = '';
+      if (sys.isNotEmpty && dia.isNotEmpty) {
+        newBp = '$sys/$dia';
+      } else if (sys.isNotEmpty) {
+        newBp = sys;
+      }
+
+      // Show loading
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Health metrics updated!'),
-            backgroundColor: Colors.green,
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('Saving health metrics...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
           ),
         );
+      }
+
+      try {
+        // Save to API
+        if (token != null) {
+          final service = HealthMetricsService(token);
+          final updatedMetrics = await service.updateHealthMetrics(
+            cholesterol: newChol,
+            bloodSugar: newSugar,
+            bloodPressure: newBp,
+          );
+
+          if (mounted) {
+            setState(() {
+              _cholesterol = updatedMetrics.cholesterolDisplay;
+              _bloodSugar = updatedMetrics.bloodSugarDisplay;
+              _bloodPressure = updatedMetrics.bloodPressureDisplay;
+            });
+          }
+          debugPrint('✅ Health metrics saved to API');
+        }
+
+        // Also save locally as backup
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          '${userEmail}_cholesterol',
+          newChol.isEmpty ? 'Not set' : newChol,
+        );
+        await prefs.setString(
+          '${userEmail}_bloodSugar',
+          newSugar.isEmpty ? 'Not set' : newSugar,
+        );
+        await prefs.setString(
+          '${userEmail}_bloodPressure',
+          newBp.isEmpty ? 'Not set' : newBp,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Health metrics updated!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ Failed to save health metrics: $e');
+
+        // Still update UI with local values
+        if (mounted) {
+          setState(() {
+            _cholesterol = newChol.isEmpty ? 'Not set' : newChol;
+            _bloodSugar = newSugar.isEmpty ? 'Not set' : newSugar;
+            _bloodPressure = newBp.isEmpty ? 'Not set' : newBp;
+          });
+
+          // Save locally anyway
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('${userEmail}_cholesterol', _cholesterol);
+          await prefs.setString('${userEmail}_bloodSugar', _bloodSugar);
+          await prefs.setString('${userEmail}_bloodPressure', _bloodPressure);
+
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Saved locally (Offline)'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     }
   }
@@ -541,36 +791,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
 
       debugPrint('✅ Profile update sent to backend');
-      debugPrint('🔄 Reloading profile from API...');
 
-      // Force clear current profile
-      if (mounted) {
-        setState(() {
-          _profile = null;
-          _loading = true;
-        });
-      }
+      // Save locally to workaround backend bug
+      final updatedData = {
+        'name': name ?? _profile?.name,
+        'age': age ?? _profile?.age,
+        'gender': gender ?? _profile?.gender,
+        'weight': weight ?? _profile?.weight,
+        'height': height ?? _profile?.height,
+        'isProfileComplete': true,
+      };
+      await _saveProfileLocally(updatedData);
+      debugPrint('💾 Profile update saved locally');
 
-      // Small delay to ensure backend is updated
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      // Reload the profile from API to get fresh data
-      final freshProfile = await profileService.getProfile();
-      
-      debugPrint('📱 Fresh profile loaded:');
-      debugPrint('  Name: ${freshProfile.name}');
-      debugPrint('  Age: ${freshProfile.age}');
-      debugPrint('  Gender: ${freshProfile.gender}');
-      debugPrint('  Weight: ${freshProfile.weight}');
-      debugPrint('  Height: ${freshProfile.height}');
+      // Reload using hybrid loader
+      await _loadProfile();
 
       if (mounted) {
-        setState(() {
-          _profile = freshProfile;
-          _loading = false;
-          _error = null;
-        });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully!'),
@@ -584,7 +821,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update: ${e.toString().replaceFirst('Exception: ', '')}'),
+            content: Text(
+              'Failed to update: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
             backgroundColor: Colors.red,
           ),
         );

@@ -57,7 +57,20 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true); // Return to profile screen
+        
+        // Return the profile data so we can save it locally
+        final profileData = {
+          'name': _nameController.text.trim(),
+          'age': int.parse(_ageController.text.trim()),
+          'gender': _selectedGender,
+          'weight': double.parse(_weightController.text.trim()),
+          'height': _heightController.text.trim().isEmpty
+              ? null
+              : double.parse(_heightController.text.trim()),
+          'isProfileComplete': true,
+        };
+        
+        Navigator.of(context).pop(profileData); // Return data
       }
     } catch (e) {
       if (mounted) {

@@ -9,7 +9,8 @@ class WaterTrackingWidget extends ConsumerStatefulWidget {
   const WaterTrackingWidget({super.key});
 
   @override
-  ConsumerState<WaterTrackingWidget> createState() => _WaterTrackingWidgetState();
+  ConsumerState<WaterTrackingWidget> createState() =>
+      _WaterTrackingWidgetState();
 }
 
 class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
@@ -26,9 +27,8 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
 
   Future<void> _loadWaterData() async {
     final token = ref.read(authProvider).user?.token;
-    
+
     if (token == null || token.isEmpty) {
-      // Not logged in - use default values
       return;
     }
 
@@ -36,9 +36,11 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
 
     try {
       final waterService = WaterService(token);
-      
+      debugPrint('💧 Fetching water data...');
+
       try {
         final data = await waterService.getTodayWaterIntake();
+        debugPrint('💧 Water data received: ${data.count}/${data.goal}');
         if (mounted) {
           setState(() {
             _todayData = data;
@@ -48,8 +50,10 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
           });
         }
       } catch (e) {
-        // Initialize goal if not exists
+        debugPrint('⚠️ Failed to get water data: $e');
+        // Initialize goal if not exists or other error
         try {
+          debugPrint('💧 Setting default water goal to 8...');
           await waterService.setWaterGoal(8);
           final data = await waterService.getTodayWaterIntake();
           if (mounted) {
@@ -61,14 +65,31 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
             });
           }
         } catch (goalError) {
+          debugPrint('❌ Failed to set default goal: $goalError');
+          // Fallback to local defaults if network is completely down
           if (mounted) {
             setState(() {
+              _currentGlasses = 0;
+              _totalGlasses = 8;
               _loading = false;
+              // Create a dummy response for UI consistency if needed
+              _todayData = const WaterTodayResponse(
+                count: 0,
+                goal: 8,
+                percentage: 0,
+                remaining: 8,
+                isCompleted: false,
+              );
             });
+            // Optional: Show offline message
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(content: Text('Offline mode: Using default water goal')),
+            // );
           }
         }
       }
     } catch (e) {
+      debugPrint('❌ Water service error: $e');
       if (mounted) {
         setState(() => _loading = false);
       }
@@ -77,9 +98,8 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
 
   Future<void> _addWater() async {
     final token = ref.read(authProvider).user?.token;
-    
+
     if (token == null) {
-      // Show login prompt
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please login to track water'),
@@ -93,8 +113,10 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
 
     try {
       final waterService = WaterService(token);
+      debugPrint('💧 Adding water glass...');
       final result = await waterService.addWaterGlass();
-      
+      debugPrint('💧 Water added: ${result.count}/${result.goal}');
+
       if (mounted) {
         setState(() {
           _todayData = result;
@@ -105,18 +127,23 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Added 250ml! ${result.count}/${result.goal} glasses'),
+            content: Text(
+              'Added 250ml! ${result.count}/${result.goal} glasses',
+            ),
             duration: const Duration(seconds: 1),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
+      debugPrint('❌ Failed to add water: $e');
       if (mounted) {
         setState(() => _loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add water: ${e.toString().replaceFirst('Exception: ', '')}'),
+            content: Text(
+              'Failed: ${e.toString().replaceFirst('Exception: ', '')}',
+            ),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.red,
           ),
@@ -163,7 +190,7 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
               ],
             ),
           ),
-          
+
           // Right side - Glass visualization
           Row(
             children: [
@@ -199,10 +226,7 @@ class _WaterTrackingWidgetState extends ConsumerState<WaterTrackingWidget> {
       height: 40,
       decoration: BoxDecoration(
         color: filled ? const Color(0xFFE57373) : Colors.white,
-        border: Border.all(
-          color: const Color(0xFFE57373),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFFE57373), width: 1.5),
         borderRadius: BorderRadius.circular(3),
       ),
     );

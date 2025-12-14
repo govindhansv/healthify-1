@@ -1,18 +1,25 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfileSetupScreen extends StatefulWidget {
+import '../../providers/auth_provider.dart';
+import '../../services/profile_service.dart';
+
+class ProfileSetupScreen extends ConsumerStatefulWidget {
   const ProfileSetupScreen({super.key});
 
   @override
-  State<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
+  ConsumerState<ProfileSetupScreen> createState() => _ProfileSetupScreenState();
 }
 
-class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
+class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final int _totalPages = 2;
+  bool _isLoading = false;
 
   // Step 1 fields
   final _nameController = TextEditingController();
@@ -34,13 +41,45 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
+      // Validate first page before proceeding
+      if (_currentPage == 0) {
+        final name = _nameController.text.trim();
+        final age = _ageController.text.trim();
+        final weight = _weightController.text.trim();
+
+        if (name.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter your name')),
+          );
+          return;
+        }
+        if (age.isEmpty || int.tryParse(age) == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter a valid age')),
+          );
+          return;
+        }
+        if (weight.isEmpty || double.tryParse(weight) == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter a valid weight')),
+          );
+          return;
+        }
+        if (_selectedGender == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please select your gender')),
+          );
+          return;
+        }
+      }
+
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } else {
-      // Last page, go to home
-      _goToHome();
+      // Last page, complete profile and go to home
+      _completeProfileAndGoHome();
     }
   }
 
@@ -53,16 +92,146 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     }
   }
 
-  Future<void> _goToHome() async {
-    // Save login state since user just completed signup + profile setup
+  String _mapGenderToBackend(String? gender) {
+    if (gender == null) return 'other';
+    switch (gender.toLowerCase()) {
+      case 'male':
+        return 'male';
+      case 'female':
+        return 'female';
+      case 'prefer not to say':
+        return 'other';
+      default:
+        return 'other';
+    }
+  }
+
+  Future<void> _completeProfileAndGoHome() async {
+    final token = ref.read(authProvider).user?.token;
+    final userEmail = ref.read(authProvider).user?.email ?? '';
+
+    final name = _nameController.text.trim();
+    final age = int.tryParse(_ageController.text.trim()) ?? 25;
+    final weight = double.tryParse(_weightController.text.trim()) ?? 70.0;
+    final gender = _mapGenderToBackend(_selectedGender);
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Call the profile API if we have a token
+      if (token != null && token.isNotEmpty) {
+        debugPrint('📡 Calling profile/complete API...');
+        final profileService = ProfileService(token);
+        await profileService.completeProfile(
+          name: name.isNotEmpty ? name : 'User',
+          age: age,
+          gender: gender,
+          weight: weight,
+        );
+        debugPrint('✅ Profile completed on backend');
+      }
+
+      // Also save locally as backup
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+
+      if (name.isNotEmpty) {
+        await prefs.setString('userName', name);
+      }
+
+      // Save profile data locally for fallback
+      final profileData = {
+        'name': name,
+        'age': age,
+        'gender': gender,
+        'weight': weight,
+        'isProfileComplete': true,
+        'profileCompleted': true,
+      };
+      await prefs.setString('profile_data_$userEmail', jsonEncode(profileData));
+      debugPrint('💾 Profile saved locally for $userEmail');
+
+      // Update auth state to mark profile as complete
+      ref.read(authProvider.notifier).setProfileCompleted(true);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile setup complete!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+    } catch (e) {
+      debugPrint('❌ Profile completion error: $e');
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      // Show error but still allow proceeding (save locally)
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+
+      final shouldProceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Profile Sync Issue'),
+          content: Text(
+            'Could not save profile to server: $errorMsg\n\n'
+            'Your profile will be saved locally. Would you like to continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Try Again'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Continue Anyway'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldProceed == true) {
+        // Save locally and proceed
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', true);
+        if (name.isNotEmpty) {
+          await prefs.setString('userName', name);
+        }
+
+        final profileData = {
+          'name': name,
+          'age': age,
+          'gender': gender,
+          'weight': weight,
+          'isProfileComplete': true,
+          'profileCompleted': true,
+        };
+        await prefs.setString(
+          'profile_data_$userEmail',
+          jsonEncode(profileData),
+        );
+
+        // Update auth state to mark profile as complete
+        ref.read(authProvider.notifier).setProfileCompleted(true);
+
+        if (mounted) {
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+        }
+      }
+    }
+  }
+
+  Future<void> _skipAndGoHome() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
-
-    // Save user name if provided
-    final name = _nameController.text.trim();
-    if (name.isNotEmpty) {
-      await prefs.setString('userName', name);
-    }
 
     if (!mounted) return;
     Navigator.of(
@@ -177,13 +346,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   const SizedBox(width: 12),
                   // Skip button
                   GestureDetector(
-                    onTap: _goToHome,
+                    onTap: _isLoading ? null : _skipAndGoHome,
                     child: Text(
                       'Skip',
                       style: GoogleFonts.inter(
-                        textStyle: const TextStyle(
+                        textStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
+                          color: _isLoading ? Colors.grey : Colors.black,
                         ),
                       ),
                     ),
@@ -209,23 +379,32 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _nextPage,
+                  onPressed: _isLoading ? null : _nextPage,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFAA3D50),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  child: Text(
-                    _currentPage < _totalPages - 1 ? 'Next' : 'Finish',
-                    style: GoogleFonts.inter(
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _currentPage < _totalPages - 1 ? 'Next' : 'Finish',
+                          style: GoogleFonts.inter(
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                 ),
               ),
             ),

@@ -24,7 +24,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     final authState = ref.read(authProvider);
     if (authState.status == AuthStatus.authenticated) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      // Check if profile is complete
+      final isProfileComplete = authState.user?.isProfileComplete ?? false;
+      if (isProfileComplete) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        // Need to complete profile first
+        Navigator.of(context).pushReplacementNamed('/profile_setup');
+      }
     } else {
       Navigator.of(context).pushReplacementNamed('/onboarding');
     }

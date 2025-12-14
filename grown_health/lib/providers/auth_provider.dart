@@ -12,7 +12,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
 
   AuthNotifier(this._storageService, this._authService)
-      : super(const AuthState()) {
+    : super(const AuthState()) {
     _checkAuthStatus();
   }
 
@@ -20,11 +20,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _checkAuthStatus() async {
     final token = _storageService.getToken();
     final email = _storageService.getEmail();
+    final profileCompleted = _storageService.getProfileCompleted();
 
     if (token != null && token.isNotEmpty) {
       state = AuthState(
         status: AuthStatus.authenticated,
-        user: UserModel(email: email, token: token),
+        user: UserModel(
+          email: email,
+          token: token,
+          isProfileComplete: profileCompleted,
+        ),
       );
     } else {
       state = const AuthState(status: AuthStatus.unauthenticated);
@@ -32,7 +37,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Login with email and password
-  Future<bool> login({
+  /// Returns a map with 'success' and 'profileCompleted' boolean values
+  Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
@@ -41,25 +47,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       // Clear any previous user's data first
       await _storageService.clearAuth();
-      
-      final token = await _authService.login(
-        email: email,
-        password: password,
-      );
+
+      final result = await _authService.login(email: email, password: password);
+      final token = result['token'] as String;
+      final profileCompleted = result['profileCompleted'] as bool? ?? false;
+      final name = result['name'] as String? ?? '';
+
       await _storageService.saveToken(token);
       await _storageService.saveEmail(email);
+      await _storageService.saveProfileCompleted(profileCompleted);
 
       state = AuthState(
         status: AuthStatus.authenticated,
-        user: UserModel(email: email, token: token),
+        user: UserModel(
+          email: email,
+          token: token,
+          name: name,
+          isProfileComplete: profileCompleted,
+        ),
       );
-      return true;
+      return {'success': true, 'profileCompleted': profileCompleted};
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString().replaceFirst('Exception: ', ''),
       );
-      return false;
+      return {'success': false, 'profileCompleted': false};
     }
   }
 
@@ -67,16 +80,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> register({
     required String email,
     required String password,
+    String? name,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       // Clear any previous user's data first
       await _storageService.clearAuth();
-      
+
       final token = await _authService.register(
         email: email,
         password: password,
+        name: name,
       );
 
       if (token.isNotEmpty) {
@@ -109,6 +124,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Clear any error message
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  /// Update profile completion status
+  Future<void> setProfileCompleted(bool completed) async {
+    await _storageService.saveProfileCompleted(completed);
+    if (state.user != null) {
+      state = AuthState(
+        status: state.status,
+        user: state.user!.copyWith(isProfileComplete: completed),
+      );
+    }
   }
 }
 

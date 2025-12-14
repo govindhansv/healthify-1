@@ -12,9 +12,9 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  // Prefill with test credentials for development
-  final _emailController = TextEditingController(text: 'test@example.com');
-  final _passwordController = TextEditingController(text: 'password123');
+  // Email and password controllers
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -34,14 +34,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    final success = await ref
+    final result = await ref
         .read(authProvider.notifier)
         .login(email: email, password: password);
 
     if (!mounted) return;
 
+    final success = result['success'] as bool? ?? false;
+    final profileCompleted = result['profileCompleted'] as bool? ?? false;
+
     if (success) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      if (profileCompleted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else {
+        // Redirect to profile setup if profile is not complete
+        Navigator.of(context).pushReplacementNamed('/profile_setup');
+      }
     } else {
       final error = ref.read(authProvider).error;
       if (error != null) {

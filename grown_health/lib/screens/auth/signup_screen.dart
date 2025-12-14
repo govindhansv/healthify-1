@@ -44,9 +44,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
 
+    final name = _nameController.text.trim();
+
     final success = await ref
         .read(authProvider.notifier)
-        .register(email: email, password: password);
+        .register(email: email, password: password, name: name);
 
     if (!mounted) return;
 

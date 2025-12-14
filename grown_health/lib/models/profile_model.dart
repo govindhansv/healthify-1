@@ -26,22 +26,51 @@ class ProfileModel {
   });
 
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
+    // Handle wrapped response (backend returns {success: true, data: {...}})
+    final data =
+        json.containsKey('data') && json['data'] is Map<String, dynamic>
+        ? json['data'] as Map<String, dynamic>
+        : json;
+
+    // Parse age - handle both int and null
+    int? parsedAge;
+    if (data['age'] != null) {
+      if (data['age'] is int) {
+        parsedAge = data['age'] as int;
+      } else if (data['age'] is num) {
+        parsedAge = (data['age'] as num).toInt();
+      }
+    }
+
+    // Parse createdAt/updatedAt - handle both String and null
+    DateTime? parsedCreatedAt;
+    DateTime? parsedUpdatedAt;
+    try {
+      if (data['createdAt'] != null) {
+        parsedCreatedAt = DateTime.parse(data['createdAt'].toString());
+      }
+      if (data['updatedAt'] != null) {
+        parsedUpdatedAt = DateTime.parse(data['updatedAt'].toString());
+      }
+    } catch (_) {
+      // Ignore date parsing errors
+    }
+
     return ProfileModel(
-      id: json['_id'] as String?,
-      email: json['email'] as String?,
-      name: json['name'] as String?,
-      age: json['age'] as int?,
-      gender: json['gender'] as String?,
-      weight: (json['weight'] as num?)?.toDouble(),
-      height: (json['height'] as num?)?.toDouble(),
-      profileImage: json['profileImage'] as String?,
-      isProfileComplete: json['isProfileComplete'] as bool?,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt'] as String)
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      // Backend returns 'id' but also might use '_id'
+      id: (data['id'] ?? data['_id'])?.toString(),
+      email: data['email'] as String?,
+      name: data['name'] as String?,
+      age: parsedAge,
+      gender: data['gender'] as String?,
+      weight: (data['weight'] as num?)?.toDouble(),
+      height: (data['height'] as num?)?.toDouble(),
+      profileImage: data['profileImage'] as String?,
+      // Backend returns 'profileCompleted' not 'isProfileComplete'
+      isProfileComplete:
+          (data['profileCompleted'] ?? data['isProfileComplete']) as bool?,
+      createdAt: parsedCreatedAt,
+      updatedAt: parsedUpdatedAt,
     );
   }
 

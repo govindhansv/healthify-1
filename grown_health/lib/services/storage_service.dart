@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   static const String _tokenKey = 'auth_token';
   static const String _emailKey = 'user_email';
+  static const String _profileCompletedKey = 'profile_completed';
 
   final SharedPreferences _prefs;
 
@@ -34,10 +35,24 @@ class StorageService {
     await _prefs.remove(_emailKey);
   }
 
+  // Profile Completed
+  Future<void> saveProfileCompleted(bool completed) async {
+    await _prefs.setBool(_profileCompletedKey, completed);
+  }
+
+  bool getProfileCompleted() {
+    return _prefs.getBool(_profileCompletedKey) ?? false;
+  }
+
+  Future<void> removeProfileCompleted() async {
+    await _prefs.remove(_profileCompletedKey);
+  }
+
   // Clear all auth data
   Future<void> clearAuth() async {
     await _prefs.remove(_tokenKey);
     await _prefs.remove(_emailKey);
+    await _prefs.remove(_profileCompletedKey);
     // Also clear any other user-specific data
     await _prefs.remove('userName');
     // Clear all keys that start with 'user_' or 'profile_'

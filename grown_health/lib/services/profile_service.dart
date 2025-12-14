@@ -60,6 +60,8 @@ class ProfileService {
         body: jsonEncode(body),
       );
 
+      print('📝 Complete Profile Response: ${res.body}');
+
       if (res.statusCode >= 200 && res.statusCode < 300) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         return ProfileModel.fromJson(data);
