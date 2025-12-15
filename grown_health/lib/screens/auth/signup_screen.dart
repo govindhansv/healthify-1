@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -77,7 +78,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final isLoading = authState.isLoading;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -98,7 +99,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               Text(
                 'Sign up to personalize your health plan',
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.grey500,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -117,7 +121,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 decoration: InputDecoration(
                   hintText: 'Your name',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AppTheme.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -141,7 +145,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 decoration: InputDecoration(
                   hintText: 'you@example.com',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AppTheme.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -165,7 +169,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 decoration: InputDecoration(
                   hintText: 'Create password',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AppTheme.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -189,7 +193,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 decoration: InputDecoration(
                   hintText: 'Re-enter password',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AppTheme.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -203,7 +207,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 child: ElevatedButton(
                   onPressed: isLoading ? null : _handleSignup,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFAA3D50),
+                    backgroundColor: AppTheme.accentColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -215,7 +219,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                              AppTheme.white,
                             ),
                           ),
                         )
@@ -252,7 +256,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         textStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFAA3D50),
+                          color: AppTheme.accentColor,
                         ),
                       ),
                     ),

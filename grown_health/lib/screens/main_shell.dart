@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'home/home_screen.dart';
@@ -34,7 +35,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       body: SafeArea(
         child: IndexedStack(index: _currentIndex, children: _pages),
       ),
@@ -63,7 +64,7 @@ class _SharedBottomNav extends StatelessWidget {
           borderRadius: BorderRadius.circular(40),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: AppTheme.black.withOpacity(0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -147,7 +148,7 @@ class _BottomNavItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.white,
             borderRadius: BorderRadius.circular(24),
           ),
           child: Row(
@@ -180,7 +181,7 @@ class _BottomNavItem extends StatelessWidget {
       onTap: () => onTap(index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Icon(icon, size: 26, color: Colors.white.withOpacity(0.6)),
+        child: Icon(icon, size: 26, color: AppTheme.white.withOpacity(0.6)),
       ),
     );
   }

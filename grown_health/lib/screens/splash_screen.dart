@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -40,7 +41,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF5B0C23), // Darker burgundy from design
+      backgroundColor: AppTheme.primaryColor, // Darker burgundy from design
       body: SafeArea(
         child: Center(
           child: Column(
@@ -52,7 +53,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 height: 140,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppTheme.white,
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Center(
@@ -67,7 +68,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.w700, // Make it bolder
                     fontSize: 32,
-                    color: Colors.white,
+                    color: AppTheme.white,
                   ),
                 ),
               ),
@@ -79,7 +80,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.w400,
                     fontSize: 16,
-                    color: Colors.white70,
+                    color: AppTheme.white70,
                   ),
                 ),
               ),

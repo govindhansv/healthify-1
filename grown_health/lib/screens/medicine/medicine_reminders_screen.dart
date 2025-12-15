@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -144,21 +145,21 @@ class _MedicineRemindersScreenState
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.white,
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFFAA3D50)),
+          child: CircularProgressIndicator(color: AppTheme.accentColor),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: Colors.black,
+            color: AppTheme.black,
           ),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -169,7 +170,7 @@ class _MedicineRemindersScreenState
             textStyle: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: AppTheme.black,
             ),
           ),
         ),
@@ -189,7 +190,7 @@ class _MedicineRemindersScreenState
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFAA3D50),
+        backgroundColor: AppTheme.accentColor,
 
         onPressed: () async {
           final result = await Navigator.of(context).pushNamed('/add_medicine');
@@ -199,7 +200,7 @@ class _MedicineRemindersScreenState
             await _addMedicine(result);
           }
         },
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: AppTheme.white),
       ),
     );
   }
@@ -213,17 +214,17 @@ class _MedicineRemindersScreenState
       },
       decoration: InputDecoration(
         hintText: 'Search medicine',
-        prefixIcon: const Icon(Icons.search, color: Color(0xFFAA3D50)),
+        prefixIcon: const Icon(Icons.search, color: AppTheme.accentColor),
         suffixIcon: _searchQuery.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.close, color: Colors.black54),
+                icon: const Icon(Icons.close, color: AppTheme.black54),
                 onPressed: () {
                   setState(() {
                     _searchQuery = '';
                   });
                 },
               )
-            : const Icon(Icons.close, color: Colors.black54),
+            : const Icon(Icons.close, color: AppTheme.black54),
         filled: true,
         fillColor: const Color(0xFFFCE4E8),
         contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -252,14 +253,17 @@ class _MedicineRemindersScreenState
               child: const Icon(
                 Icons.add_box_outlined,
                 size: 20,
-                color: Color(0xFFAA3D50),
+                color: AppTheme.accentColor,
               ),
             ),
             const SizedBox(width: 12),
             Text(
               'No medicine reminders found',
               style: GoogleFonts.inter(
-                textStyle: const TextStyle(fontSize: 14, color: Colors.black87),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.black87,
+                ),
               ),
             ),
           ],
@@ -341,7 +345,7 @@ class _MedicineRemindersScreenState
       child: Text(
         'No medicines match your search',
         style: GoogleFonts.inter(
-          textStyle: const TextStyle(fontSize: 14, color: Colors.black54),
+          textStyle: const TextStyle(fontSize: 14, color: AppTheme.black54),
         ),
       ),
     );
@@ -387,7 +391,7 @@ class _MedicineCard extends StatelessWidget {
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), blurRadius: 8),
@@ -403,7 +407,7 @@ class _MedicineCard extends StatelessWidget {
               color: const Color(0xFFFCE4E8),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.medication, color: Color(0xFFAA3D50)),
+            child: const Icon(Icons.medication, color: AppTheme.accentColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -428,7 +432,7 @@ class _MedicineCard extends StatelessWidget {
                         textStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFAA3D50),
+                          color: AppTheme.accentColor,
                         ),
                       ),
                     ),
@@ -442,7 +446,7 @@ class _MedicineCard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     textStyle: const TextStyle(
                       fontSize: 12,
-                      color: Colors.black87,
+                      color: AppTheme.black87,
                     ),
                   ),
                 ),
@@ -451,7 +455,7 @@ class _MedicineCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.black54),
+            icon: const Icon(Icons.more_vert, color: AppTheme.black54),
             onSelected: (value) {
               if (value == 'edit') {
                 onEdit();

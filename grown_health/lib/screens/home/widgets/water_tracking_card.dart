@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../services/water_service.dart';
 import '../../../providers/auth_provider.dart';
-
 
 class WaterTrackingCard extends ConsumerStatefulWidget {
   const WaterTrackingCard({super.key});
@@ -25,7 +25,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
 
   Future<void> _loadWaterData() async {
     final token = ref.read(authProvider).user?.token;
-    
+
     if (token == null || token.isEmpty) {
       // User not logged in - show static card
       if (mounted) {
@@ -47,13 +47,13 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
 
     try {
       final waterService = WaterService(token);
-      
+
       // Try to get today's data
       try {
         debugPrint('🚰 Fetching today\'s water intake...');
         final data = await waterService.getTodayWaterIntake();
         debugPrint('✅ Got water data: ${data.count}/${data.goal} glasses');
-        
+
         if (mounted) {
           setState(() {
             _todayData = data;
@@ -65,12 +65,16 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
         debugPrint('⚠️ No water data found, initializing goal...');
         // If no data exists, set goal first
         try {
-          await waterService.setWaterGoal(8); // 8 glasses = 2000ml (250ml per glass)
+          await waterService.setWaterGoal(
+            8,
+          ); // 8 glasses = 2000ml (250ml per glass)
           debugPrint('✅ Goal set to 8 glasses');
-          
+
           final data = await waterService.getTodayWaterIntake();
-          debugPrint('✅ Got water data after setting goal: ${data.count}/${data.goal}');
-          
+          debugPrint(
+            '✅ Got water data after setting goal: ${data.count}/${data.goal}',
+          );
+
           if (mounted) {
             setState(() {
               _todayData = data;
@@ -82,7 +86,8 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
           debugPrint('❌ Failed to initialize water tracking: $goalError');
           if (mounted) {
             setState(() {
-              _error = 'Unable to connect to water tracking service. Please check your internet connection.';
+              _error =
+                  'Unable to connect to water tracking service. Please check your internet connection.';
               _loading = false;
             });
           }
@@ -101,7 +106,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
 
   Future<void> _addWater() async {
     final token = ref.read(authProvider).user?.token;
-    
+
     if (token == null) return;
 
     setState(() => _loading = true);
@@ -109,7 +114,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
     try {
       final waterService = WaterService(token);
       final result = await waterService.addWaterGlass();
-      
+
       setState(() {
         _todayData = result;
         _loading = false;
@@ -120,9 +125,11 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Added 250ml! ${result.count}/${result.goal} glasses'),
+            content: Text(
+              'Added 250ml! ${result.count}/${result.goal} glasses',
+            ),
             duration: const Duration(seconds: 1),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.successColor,
           ),
         );
       }
@@ -138,11 +145,11 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
   Widget build(BuildContext context) {
     // Check if user is logged in
     final token = ref.watch(authProvider).user?.token;
-    
+
     if (token == null || token.isEmpty) {
       return _buildLoginPromptCard();
     }
-    
+
     if (_loading && _todayData == null) {
       return _buildLoadingCard();
     }
@@ -158,7 +165,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
     return Container(
       height: 260,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(27),
         boxShadow: [
           const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.15), blurRadius: 9),
@@ -172,13 +179,13 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
               width: 110,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
+                  color: AppTheme.lightBlue,
                   borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Icon(
                   Icons.local_drink_rounded,
                   size: 48,
-                  color: Color(0xFFAA3D50),
+                  color: AppTheme.accentColor,
                 ),
               ),
             ),
@@ -196,7 +203,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                       textStyle: const TextStyle(
                         fontSize: 23,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFAA3D50),
+                        color: AppTheme.accentColor,
                       ),
                     ),
                   ),
@@ -207,7 +214,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                       textStyle: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                        color: AppTheme.black,
                       ),
                     ),
                   ),
@@ -230,7 +237,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                         horizontal: 14,
                         vertical: 8,
                       ),
-                      side: const BorderSide(color: Colors.black, width: 1),
+                      side: const BorderSide(color: AppTheme.black, width: 1),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(7),
                       ),
@@ -241,16 +248,20 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                             height: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.black,
+                              color: AppTheme.black,
                             ),
                           )
-                        : const Icon(Icons.add, size: 18, color: Colors.black),
+                        : const Icon(
+                            Icons.add,
+                            size: 18,
+                            color: AppTheme.black,
+                          ),
                     label: Text(
                       '250 ml',
                       style: GoogleFonts.inter(
                         textStyle: const TextStyle(
                           fontSize: 17,
-                          color: Colors.black,
+                          color: AppTheme.black,
                         ),
                       ),
                     ),
@@ -268,16 +279,14 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
     return Container(
       height: 260,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(27),
         boxShadow: [
           const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.15), blurRadius: 9),
         ],
       ),
       child: const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFFAA3D50),
-        ),
+        child: CircularProgressIndicator(color: AppTheme.accentColor),
       ),
     );
   }
@@ -286,7 +295,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
     return Container(
       height: 260,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(27),
         boxShadow: [
           const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.15), blurRadius: 9),
@@ -301,7 +310,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
               const Icon(
                 Icons.error_outline,
                 size: 48,
-                color: Colors.red,
+                color: AppTheme.errorColor,
               ),
               const SizedBox(height: 16),
               Text(
@@ -315,7 +324,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
               ElevatedButton(
                 onPressed: _loadWaterData,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFAA3D50),
+                  backgroundColor: AppTheme.accentColor,
                 ),
                 child: const Text('Retry'),
               ),
@@ -330,7 +339,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
     return Container(
       height: 260,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         borderRadius: BorderRadius.circular(27),
         boxShadow: [
           const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.15), blurRadius: 9),
@@ -344,13 +353,13 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
               width: 110,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE3F2FD),
+                  color: AppTheme.lightBlue,
                   borderRadius: BorderRadius.circular(22),
                 ),
                 child: const Icon(
                   Icons.local_drink_rounded,
                   size: 48,
-                  color: Color(0xFFAA3D50),
+                  color: AppTheme.accentColor,
                 ),
               ),
             ),
@@ -369,7 +378,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                       textStyle: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFAA3D50),
+                        color: AppTheme.accentColor,
                       ),
                     ),
                   ),
@@ -390,7 +399,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                       Navigator.of(context).pushNamed('/login');
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFAA3D50),
+                      backgroundColor: AppTheme.accentColor,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
@@ -405,7 +414,7 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
                         textStyle: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: Colors.white,
+                          color: AppTheme.white,
                         ),
                       ),
                     ),

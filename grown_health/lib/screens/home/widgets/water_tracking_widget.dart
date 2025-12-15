@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/auth_provider.dart';
@@ -27,7 +28,7 @@ class WaterTrackingWidget extends ConsumerWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF5B0C23),
+              color: AppTheme.primaryColor,
             ),
           ),
         ),
@@ -68,8 +69,8 @@ class WaterTrackingWidget extends ConsumerWidget {
                           ),
                           decoration: BoxDecoration(
                             color: isFilled
-                                ? const Color(0xFFAA3D50)
-                                : Colors.transparent,
+                                ? AppTheme.accentColor
+                                : AppTheme.transparent,
                             borderRadius: BorderRadius.circular(4),
                             border: isFilled
                                 ? null

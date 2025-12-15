@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -93,14 +94,14 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(
             Icons.chevron_left_rounded,
-            color: Colors.black,
+            color: AppTheme.black,
             size: 28,
           ),
           onPressed: () => Navigator.pop(context),
@@ -111,7 +112,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
             textStyle: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: AppTheme.black,
             ),
           ),
         ),
@@ -133,12 +134,9 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
+            Icon(Icons.error_outline, size: 48, color: AppTheme.grey400),
             const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: GoogleFonts.inter(color: Colors.grey.shade600),
-            ),
+            Text(_error!, style: GoogleFonts.inter(color: AppTheme.grey600)),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadMeditation,
@@ -213,7 +211,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: AppTheme.black54,
                       ),
                     ),
                   ),
@@ -272,7 +270,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
                   style: GoogleFonts.inter(
                     textStyle: const TextStyle(
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: AppTheme.black87,
                     ),
                   ),
                 ),
@@ -312,7 +310,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: AppTheme.black87,
                       ),
                     ),
                   ),
@@ -332,10 +330,10 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: AppTheme.black.withOpacity(0.06),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),
@@ -358,7 +356,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: AppTheme.grey500,
                       ),
                     ),
                   ),
@@ -386,7 +384,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
                 ),
                 child: const Icon(
                   Icons.play_arrow_rounded,
-                  color: Colors.white,
+                  color: AppTheme.white,
                   size: 28,
                 ),
               ),
@@ -416,8 +414,8 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
     Color textColor;
 
     if (isVideo) {
-      bgColor = Colors.red.shade100;
-      textColor = Colors.red.shade700;
+      bgColor = AppTheme.red100;
+      textColor = AppTheme.red700;
     } else if (isSecondary) {
       bgColor = const Color(0xFFE5F7E8);
       textColor = const Color(0xFF1E8842);
@@ -460,7 +458,7 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 22, color: Colors.black87),
+            Icon(icon, size: 22, color: AppTheme.black87),
             const SizedBox(height: 12),
             Text(
               title,
@@ -475,7 +473,10 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
             Text(
               subtitle,
               style: GoogleFonts.inter(
-                textStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.grey500,
+                ),
               ),
             ),
           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -66,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState.isLoading;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -87,7 +88,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               Text(
                 'Log in to continue your health journey',
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.grey500,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -107,7 +111,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 decoration: InputDecoration(
                   hintText: 'you@example.com',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AppTheme.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -131,7 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 decoration: InputDecoration(
                   hintText: 'Enter password',
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: AppTheme.grey100,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -148,7 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFFAA3D50),
+                        color: AppTheme.accentColor,
                       ),
                     ),
                   ),
@@ -161,7 +165,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFAA3D50),
+                    backgroundColor: AppTheme.accentColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -173,7 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                              AppTheme.white,
                             ),
                           ),
                         )
@@ -208,7 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         textStyle: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFAA3D50),
+                          color: AppTheme.accentColor,
                         ),
                       ),
                     ),

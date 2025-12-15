@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFAA3D50),
+      backgroundColor: AppTheme.accentColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -80,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: isActive ? 18 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: isActive ? 1 : 0.4),
+                    color: AppTheme.white.withValues(alpha: isActive ? 1 : 0.4),
                     borderRadius: BorderRadius.circular(12),
                   ),
                 );
@@ -99,8 +100,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: ElevatedButton(
                         onPressed: _nextPage,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFFAA3D50),
+                          backgroundColor: AppTheme.white,
+                          foregroundColor: AppTheme.accentColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
@@ -124,7 +125,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: OutlinedButton(
                         onPressed: _goToLogin,
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white),
+                          side: const BorderSide(color: AppTheme.white),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
@@ -135,7 +136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             textStyle: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: AppTheme.white,
                             ),
                           ),
                         ),
@@ -149,8 +150,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: ElevatedButton(
                         onPressed: _goToLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFFAA3D50),
+                          backgroundColor: AppTheme.white,
+                          foregroundColor: AppTheme.accentColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
                           ),
@@ -206,7 +207,7 @@ class _OnboardPage extends StatelessWidget {
           width: 120,
           height: 120,
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppTheme.black.withValues(alpha: 0.05),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -214,10 +215,10 @@ class _OnboardPage extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppTheme.white,
                 shape: BoxShape.circle,
               ),
-              child: Icon(data.icon, size: 40, color: const Color(0xFFAA3D50)),
+              child: Icon(data.icon, size: 40, color: AppTheme.accentColor),
             ),
           ),
         ),
@@ -229,7 +230,7 @@ class _OnboardPage extends StatelessWidget {
             textStyle: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: AppTheme.white,
             ),
           ),
         ),
@@ -243,7 +244,7 @@ class _OnboardPage extends StatelessWidget {
               textStyle: TextStyle(
                 fontSize: 14,
                 height: 1.4,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: AppTheme.white.withValues(alpha: 0.9),
               ),
             ),
           ),

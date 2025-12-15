@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -194,7 +195,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profile setup complete!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppTheme.successColor,
         ),
       );
 
@@ -292,7 +293,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: AppTheme.grey300,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -339,7 +340,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -355,12 +356,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFAA3D50),
+                        color: AppTheme.accentColor,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.chevron_left_rounded,
-                        color: Colors.white,
+                        color: AppTheme.white,
                         size: 24,
                       ),
                     ),
@@ -372,9 +373,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: (_currentPage + 1) / _totalPages,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: AppTheme.grey200,
                         valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFFAA3D50),
+                          AppTheme.accentColor,
                         ),
                         minHeight: 6,
                       ),
@@ -390,7 +391,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         textStyle: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: _isLoading ? Colors.grey : Colors.black,
+                          color: _isLoading ? AppTheme.grey500 : AppTheme.black,
                         ),
                       ),
                     ),
@@ -418,7 +419,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _nextPage,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFAA3D50),
+                    backgroundColor: AppTheme.accentColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -429,7 +430,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppTheme.white,
                           ),
                         )
                       : Text(
@@ -438,7 +439,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             textStyle: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: AppTheme.white,
                             ),
                           ),
                         ),
@@ -496,7 +497,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: AppTheme.grey300),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -508,8 +509,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       textStyle: TextStyle(
                         fontSize: 14,
                         color: _selectedGender != null
-                            ? Colors.black
-                            : Colors.grey,
+                            ? AppTheme.black
+                            : AppTheme.grey500,
                       ),
                     ),
                   ),
@@ -518,7 +519,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 12,
-                        color: Colors.grey,
+                        color: AppTheme.grey500,
                       ),
                     ),
                   ),
@@ -554,7 +555,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: AppTheme.grey300),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -567,7 +568,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 hintText: hint,
                 border: InputBorder.none,
                 hintStyle: GoogleFonts.inter(
-                  textStyle: const TextStyle(fontSize: 14, color: Colors.grey),
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.grey500,
+                  ),
                 ),
               ),
             ),
@@ -575,7 +579,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           Text(
             label,
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+              textStyle: const TextStyle(fontSize: 12, color: AppTheme.grey500),
             ),
           ),
         ],
@@ -617,12 +621,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 },
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: AppTheme.grey100,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
-                          ? const Color(0xFFAA3D50)
-                          : Colors.transparent,
+                          ? AppTheme.accentColor
+                          : AppTheme.transparent,
                       width: 2,
                     ),
                   ),
@@ -632,7 +636,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       Icon(
                         goal['icon'] as IconData,
                         size: 40,
-                        color: const Color(0xFFAA3D50),
+                        color: AppTheme.accentColor,
                       ),
                       const SizedBox(height: 12),
                       Text(

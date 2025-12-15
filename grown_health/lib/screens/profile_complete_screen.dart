@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/profile_service.dart';
@@ -55,7 +56,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile completed successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.successColor,
           ),
         );
 
@@ -81,7 +82,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
             content: Text(
               'Failed: ${e.toString().replaceFirst('Exception: ', '')}',
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: AppTheme.errorColor,
           ),
         );
       }
@@ -91,9 +92,9 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.white,
         elevation: 0,
         title: Text(
           'Complete Your Profile',
@@ -101,7 +102,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
             textStyle: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.black,
+              color: AppTheme.black,
             ),
           ),
         ),
@@ -115,10 +116,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
             children: [
               Text(
                 'Please complete your profile to continue',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
+                style: GoogleFonts.inter(fontSize: 14, color: AppTheme.grey600),
               ),
               const SizedBox(height: 32),
 
@@ -227,7 +225,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _completeProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFAA3D50),
+                    backgroundColor: AppTheme.accentColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -238,7 +236,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppTheme.white,
                           ),
                         )
                       : Text(
@@ -247,7 +245,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
                             textStyle: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: AppTheme.white,
                             ),
                           ),
                         ),
