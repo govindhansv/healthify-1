@@ -7,6 +7,9 @@ import '../providers/auth_provider.dart';
 import '../services/profile_service.dart';
 import '../services/health_metrics_service.dart';
 import '../models/profile_model.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../services/upload_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -277,6 +280,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile == null) return;
+
+    setState(() => _loading = true);
+
+    try {
+      final token = ref.read(authProvider).user?.token;
+      if (token == null) return;
+
+      final uploadService = UploadService(token);
+      debugPrint('📤 Uploading image...');
+      final imageUrl = await uploadService.uploadImage(File(pickedFile.path));
+      debugPrint('✅ Image uploaded: $imageUrl');
+
+      final profileService = ProfileService(token);
+      await profileService.updateProfileImage(imageUrl);
+      debugPrint('✅ Profile updated with new image');
+
+      _loadProfile(); // Reload to show new image
+    } catch (e) {
+      debugPrint('❌ Image upload failed: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to upload image: ${e.toString().replaceAll("Exception:", "")}',
+            ),
+          ),
+        );
+        setState(() => _loading = false);
+      }
+    }
+  }
+
   Widget _buildProfileView(String userEmail) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -285,30 +325,60 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           const SizedBox(height: 24),
           // Avatar
-          Container(
-            width: 100,
-            height: 100,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFCE4E8),
-              shape: BoxShape.circle,
-            ),
-            child: _profile?.profileImage != null
-                ? ClipOval(
-                    child: Image.network(
-                      _profile!.profileImage!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.person_outline_rounded,
-                        size: 50,
+          // Avatar
+          Center(
+            child: Stack(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFCE4E8),
+                    shape: BoxShape.circle,
+                  ),
+                  child: _profile?.profileImage != null
+                      ? ClipOval(
+                          child: Image.network(
+                            _profile!.profileImage!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                                  Icons.person_outline_rounded,
+                                  size: 50,
+                                  color: Color(0xFFAA3D50),
+                                ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person_outline_rounded,
+                          size: 50,
+                          color: Color(0xFFAA3D50),
+                        ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
                         color: Color(0xFFAA3D50),
+                        shape: BoxShape.circle,
+                        border: Border.fromBorderSide(
+                          BorderSide(color: Colors.white, width: 2),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.white,
+                        size: 20,
                       ),
                     ),
-                  )
-                : const Icon(
-                    Icons.person_outline_rounded,
-                    size: 50,
-                    color: Color(0xFFAA3D50),
                   ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           // Name
@@ -385,7 +455,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildMetricRow(
             Icons.flag_outlined,
             'Goal',
-            'Not set', // Not in Profile API
+            _profile?.fitnessGoal ?? 'Not set',
           ),
           const SizedBox(height: 40),
           // Logout Button
@@ -476,6 +546,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final heightController = TextEditingController(
       text: _profile?.height?.toString() ?? '',
     );
+    final goalController = TextEditingController(
+      text: _profile?.fitnessGoal ?? '',
+    );
 
     final result = await showDialog<bool>(
       context: context,
@@ -501,9 +574,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  controller: heightController,
                   decoration: const InputDecoration(labelText: 'Height (cm)'),
                   keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: goalController,
+                  decoration: const InputDecoration(labelText: 'Main Goal'),
                 ),
               ],
             ),
@@ -530,6 +606,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             : genderController.text.trim(),
         weight: double.tryParse(weightController.text.trim()),
         height: double.tryParse(heightController.text.trim()),
+        fitnessGoal: goalController.text.trim(),
       );
     }
   }
@@ -754,6 +831,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           await prefs.setString('${userEmail}_bloodSugar', _bloodSugar);
           await prefs.setString('${userEmail}_bloodPressure', _bloodPressure);
 
+          if (!mounted) return;
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -773,6 +851,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     String? gender,
     double? weight,
     double? height,
+    String? fitnessGoal,
   }) async {
     final token = ref.read(authProvider).user?.token;
     if (token == null) return;
@@ -787,6 +866,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         gender: gender,
         weight: weight,
         height: height,
+        fitnessGoal: fitnessGoal,
       );
 
       debugPrint('✅ Profile update sent to backend');
@@ -798,6 +878,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         'gender': gender ?? _profile?.gender,
         'weight': weight ?? _profile?.weight,
         'height': height ?? _profile?.height,
+        'fitnessGoal': fitnessGoal ?? _profile?.fitnessGoal,
         'isProfileComplete': true,
       };
       await _saveProfileLocally(updatedData);
