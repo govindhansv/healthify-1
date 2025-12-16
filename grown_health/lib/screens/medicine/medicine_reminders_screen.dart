@@ -19,11 +19,18 @@ class _MedicineRemindersScreenState
   List<Map<String, dynamic>> _medicines = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadMedicines();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadMedicines() async {
@@ -73,8 +80,41 @@ class _MedicineRemindersScreenState
     } catch (e) {
       if (mounted) {
         SnackBarUtils.showError(context, 'Failed to save to cloud: $e');
-        // Fallback: Add locally anyway for UX if desired, or just fail.
-        // For now, let's keep local state in sync with server only on success.
+      }
+    }
+  }
+
+  Future<void> _updateMedicine(
+    String id,
+    Map<String, dynamic> result,
+    Map<String, dynamic> oldMedicine,
+  ) async {
+    try {
+      final token = ref.read(authProvider).user?.token;
+      if (token != null) {
+        final service = MedicineService(token);
+        final updatedMed = await service.updateUserMedicine(id, result);
+
+        setState(() {
+          final index = _medicines.indexOf(oldMedicine);
+          if (index != -1) {
+            _medicines[index] = updatedMed;
+          }
+        });
+
+        _persistLatest(result); // Update local persistence
+
+        if (mounted) {
+          SnackBarUtils.showSuccess(
+            context,
+            'Medicine updated successfully!',
+            duration: const Duration(seconds: 2),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarUtils.showError(context, 'Failed to update: $e');
       }
     }
   }
@@ -181,7 +221,6 @@ class _MedicineRemindersScreenState
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppTheme.accentColor,
-
         onPressed: () async {
           final result = await Navigator.of(context).pushNamed('/add_medicine');
           if (!context.mounted) return;
@@ -196,31 +235,86 @@ class _MedicineRemindersScreenState
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      onChanged: (value) {
-        setState(() {
-          _searchQuery = value.trim().toLowerCase();
-        });
-      },
-      decoration: InputDecoration(
-        hintText: 'Search medicine',
-        prefixIcon: const Icon(Icons.search, color: AppTheme.accentColor),
-        suffixIcon: _searchQuery.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.close, color: AppTheme.black54),
-                onPressed: () {
-                  setState(() {
-                    _searchQuery = '';
-                  });
-                },
-              )
-            : const Icon(Icons.close, color: AppTheme.black54),
-        filled: true,
-        fillColor: const Color(0xFFFCE4E8),
-        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(24),
-          borderSide: BorderSide.none,
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: AppTheme.searchBarBg,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.trim().toLowerCase();
+          });
+        },
+        style: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
+          color: AppTheme.black87,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search medicine',
+          hintStyle: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            color: AppTheme.grey500,
+          ),
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 16, right: 12),
+            child: Icon(
+              Icons.search_rounded,
+              color: AppTheme.grey500,
+              size: 22,
+            ),
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 48,
+            minHeight: 48,
+          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: AppTheme.grey500,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppTheme.transparent,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: AppTheme.accentColor.withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
         ),
       ),
     );
@@ -237,7 +331,7 @@ class _MedicineRemindersScreenState
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFFCE4E8),
+                color: AppTheme.lightAccentBg,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -288,35 +382,60 @@ class _MedicineRemindersScreenState
           return _MedicineCard(
             medicine: medicine,
             onEdit: () async {
-              // TODO: Wire up editing to use PUT endpoint if desired
-              // For now, we reuse the add screen but we need to handle updates differently
-              // Simple approach: navigate, if result, delete old & add new OR implement update
-
-              /* 
-               * Note: Editing existing medicines fully via API would ideally need 
-               * updateUserMedicine in the service. For now, we can leave the local
-               * flow or just focus on Add/Delete as requested.
-               * I will leave the local 'Edit' hook but inform user via TODO or keep existing local logic
-               * if not strictly required to be backend-synced for edits yet.
-               * But request says "saved locally and online".
-               */
-
               final result = await Navigator.of(
                 context,
               ).pushNamed('/add_medicine', arguments: medicine);
 
-              if (result is Map<String, dynamic>) {
-                // Simplistic "Update" by optimistic UI or reloading
-                // Ideally we call an Update API.
-                // For now, let's just trigger a reload to be safe or implement update later.
-                SnackBarUtils.showWarning(
-                  context,
-                  'Editing not fully connected to backend in this step yet.',
-                );
+              if (result is Map<String, dynamic> && medId != null) {
+                await _updateMedicine(medId, result, medicine);
               }
             },
             onDelete: () async {
-              if (medId != null) {
+              // Show confirmation dialog before deleting
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: AppTheme.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: Text(
+                    'Delete Medicine',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.black,
+                    ),
+                  ),
+                  content: Text(
+                    'Are you sure you want to delete "${medicine['name']}"? This action cannot be undone.',
+                    style: GoogleFonts.inter(color: AppTheme.black87),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.grey600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: Text(
+                        'Delete',
+                        style: GoogleFonts.inter(
+                          color: AppTheme.errorColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true && medId != null) {
                 await _deleteMedicine(medId, medicine);
               }
             },
@@ -355,108 +474,383 @@ class _MedicineCard extends StatelessWidget {
     final name = medicine['name'] as String? ?? '';
     final dosage = medicine['dosage'] as String? ?? '';
     final instructions = medicine['instructions'] as String? ?? '';
+    final frequency = medicine['frequency'] as String? ?? 'daily';
     final times = medicine['times'];
     final legacyTime = medicine['time'];
+    final reminderTimes = medicine['reminderTimes'];
+    final isActive = medicine['isActive'] as bool? ?? true;
 
-    String timeLabel = '';
-
-    if (times is List<TimeOfDay>) {
-      timeLabel = times
-          .map((t) {
-            final h = t.hour.toString().padLeft(2, '0');
-            final m = t.minute.toString().padLeft(2, '0');
-            return '$h:$m';
-          })
-          .join(', ');
+    // Parse reminder times
+    List<String> timesList = [];
+    if (reminderTimes is List && reminderTimes.isNotEmpty) {
+      timesList = reminderTimes
+          .map((rt) => rt['time'] as String? ?? '')
+          .where((t) => t.isNotEmpty)
+          .toList();
+    } else if (times is List<TimeOfDay>) {
+      timesList = times.map((t) {
+        final h = t.hour.toString().padLeft(2, '0');
+        final m = t.minute.toString().padLeft(2, '0');
+        return '$h:$m';
+      }).toList();
     } else if (legacyTime is TimeOfDay) {
       final h = legacyTime.hour.toString().padLeft(2, '0');
       final m = legacyTime.minute.toString().padLeft(2, '0');
-      timeLabel = '$h:$m';
+      timesList = ['$h:$m'];
     }
 
     return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: AppTheme.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          const BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.06), blurRadius: 8),
+          BoxShadow(
+            color: AppTheme.accentColor.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: AppTheme.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFCE4E8),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.medication, color: AppTheme.accentColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      name,
-                      style: GoogleFonts.inter(
-                        textStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      timeLabel,
-                      style: GoogleFonts.inter(
-                        textStyle: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.accentColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  dosage.isNotEmpty
-                      ? '$dosage${instructions.isNotEmpty ? ', ' : ''}$instructions'
-                      : instructions,
-                  style: GoogleFonts.inter(
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.black87,
-                    ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Accent strip on the left
+              Container(
+                width: 5,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isActive
+                        ? [
+                            AppTheme.accentColor,
+                            AppTheme.accentColor.withOpacity(0.6),
+                          ]
+                        : [AppTheme.grey400, AppTheme.grey300],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppTheme.black54),
-            onSelected: (value) {
-              if (value == 'edit') {
-                onEdit();
-              } else if (value == 'delete') {
-                onDelete();
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'edit', child: Text('Edit')),
-              PopupMenuItem(value: 'delete', child: Text('Delete')),
+              ),
+              // Main content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Medicine icon with gradient background
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppTheme.lightAccentBg,
+                              AppTheme.lightAccentBg.withOpacity(0.5),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: AppTheme.accentColor.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.medication_rounded,
+                          color: AppTheme.accentColor,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      // Text content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Medicine name with status indicator
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    name,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.black,
+                                      letterSpacing: -0.3,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (!isActive)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.grey200,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      'Paused',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.grey600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            // Dosage and frequency row
+                            Row(
+                              children: [
+                                if (dosage.isNotEmpty) ...[
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.grey100,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      dosage,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppTheme.grey700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.accentColor.withOpacity(
+                                      0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.repeat_rounded,
+                                        size: 12,
+                                        color: AppTheme.accentColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        frequency.capitalize(),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.accentColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Reminder times
+                            if (timesList.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                children: timesList.map((time) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppTheme.lightAccentBg,
+                                          AppTheme.lightAccentBg.withOpacity(
+                                            0.7,
+                                          ),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppTheme.accentColor.withOpacity(
+                                          0.15,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.alarm_rounded,
+                                          size: 14,
+                                          color: AppTheme.accentColor,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Text(
+                                          time,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.accentColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                            // Instructions
+                            if (instructions.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 13,
+                                    color: AppTheme.grey500,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      instructions,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        color: AppTheme.grey500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // Menu button
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.grey100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: PopupMenuButton<String>(
+                          icon: Icon(
+                            Icons.more_vert_rounded,
+                            color: AppTheme.grey600,
+                            size: 20,
+                          ),
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          color: AppTheme.white,
+                          elevation: 8,
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              onEdit();
+                            } else if (value == 'delete') {
+                              onDelete();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.grey100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.edit_outlined,
+                                      size: 16,
+                                      color: AppTheme.grey700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Edit',
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.grey700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.red100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 16,
+                                      color: AppTheme.errorColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Delete',
+                                    style: GoogleFonts.inter(
+                                      color: AppTheme.errorColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
+  }
+}
+
+// Extension to capitalize strings
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
 }

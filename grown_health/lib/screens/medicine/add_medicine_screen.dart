@@ -21,6 +21,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
   DateTime? _endDate;
 
   bool _isInit = true;
+  bool _isEditMode = false;
 
   @override
   void initState() {
@@ -35,23 +36,79 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null) {
-        _nameController.text = args['name'] ?? '';
-        _dosageController.text = args['dosage'] ?? '';
-        _instructionsController.text = args['instructions'] ?? '';
-        _frequency = args['frequency'] ?? 'DAILY';
+        debugPrint('Edit mode - Args received: $args');
+        _isEditMode = true;
 
+        // Populate text fields
+        _nameController.text = args['name']?.toString() ?? '';
+        _dosageController.text = args['dosage']?.toString() ?? '';
+        _instructionsController.text = args['instructions']?.toString() ?? '';
+
+        // Handle frequency - backend stores as lowercase
+        final freq = args['frequency']?.toString().toUpperCase() ?? 'DAILY';
+        _frequency = ['DAILY', 'WEEKLY', 'MONTHLY'].contains(freq)
+            ? freq
+            : 'DAILY';
+
+        // Handle startDate
         if (args['startDate'] is DateTime) {
           _startDate = args['startDate'];
-        }
-        if (args['endDate'] is DateTime) {
-          _endDate = args['endDate'];
+        } else if (args['startDate'] is String &&
+            args['startDate'].isNotEmpty) {
+          _startDate = DateTime.tryParse(args['startDate']) ?? DateTime.now();
         }
 
-        if (args['times'] is List<TimeOfDay>) {
-          _times = List<TimeOfDay>.from(args['times']);
-        } else if (args['time'] is TimeOfDay) {
-          _times = [args['time']];
+        // Handle endDate
+        if (args['endDate'] is DateTime) {
+          _endDate = args['endDate'];
+        } else if (args['endDate'] is String &&
+            args['endDate'] != null &&
+            args['endDate'].isNotEmpty) {
+          _endDate = DateTime.tryParse(args['endDate']);
         }
+
+        // Handle reminder times from backend
+        List<TimeOfDay> parsedTimes = [];
+
+        if (args['reminderTimes'] is List &&
+            (args['reminderTimes'] as List).isNotEmpty) {
+          for (var rt in args['reminderTimes']) {
+            if (rt is Map && rt['time'] != null) {
+              final timeStr = rt['time'].toString();
+              final parts = timeStr.split(':');
+              if (parts.isNotEmpty) {
+                parsedTimes.add(
+                  TimeOfDay(
+                    hour: int.tryParse(parts[0]) ?? 8,
+                    minute: parts.length > 1
+                        ? (int.tryParse(parts[1]) ?? 0)
+                        : 0,
+                  ),
+                );
+              }
+            }
+          }
+        } else if (args['times'] is List<TimeOfDay>) {
+          parsedTimes = List<TimeOfDay>.from(args['times']);
+        } else if (args['time'] is TimeOfDay) {
+          parsedTimes = [args['time']];
+        }
+
+        // Only update if we got valid times, otherwise keep default
+        if (parsedTimes.isNotEmpty) {
+          _times = parsedTimes;
+        }
+
+        debugPrint(
+          'Edit mode - Parsed: name=${_nameController.text}, dosage=${_dosageController.text}, freq=$_frequency, times=$_times',
+        );
+
+        // Force UI update after populating all fields
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
       }
       _isInit = false;
     }
@@ -164,7 +221,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
         ),
         centerTitle: true,
         title: Text(
-          'Add New Medicine',
+          _isEditMode ? 'Edit Medicine' : 'Add New Medicine',
           style: GoogleFonts.inter(
             textStyle: const TextStyle(
               fontSize: 18,
@@ -231,7 +288,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
                     ),
                   ),
                   child: Text(
-                    'Add Medicine',
+                    _isEditMode ? 'Update Medicine' : 'Add Medicine',
                     style: GoogleFonts.inter(
                       textStyle: const TextStyle(
                         fontSize: 15,
@@ -257,7 +314,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8BFC8)),
+        border: Border.all(color: AppTheme.pinkBorder),
       ),
       child: TextFormField(
         controller: controller,
@@ -283,7 +340,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8BFC8)),
+        border: Border.all(color: AppTheme.pinkBorder),
       ),
       child: DropdownButtonFormField<String>(
         initialValue: _frequency,
@@ -316,7 +373,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
             width: 100,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFCE4E8),
+              color: AppTheme.lightAccentBg,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppTheme.accentColor.withOpacity(0.3)),
             ),
@@ -369,7 +426,7 @@ class _AddMedicineScreenState extends State<AddMedicineScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE8BFC8)),
+        border: Border.all(color: AppTheme.pinkBorder),
       ),
       child: TextFormField(
         controller: _instructionsController,
@@ -401,7 +458,7 @@ class _InfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFCE4E8),
+        color: AppTheme.lightAccentBg,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

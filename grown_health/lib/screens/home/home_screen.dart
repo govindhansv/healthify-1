@@ -207,17 +207,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_none_rounded),
-              onPressed: () {
-                SnackBarUtils.showInfo(
-                  context,
-                  'No new notifications',
-                  duration: const Duration(seconds: 1),
-                );
-              },
-            ),
-            const SizedBox(width: 4),
+            // IconButton(
+            //   icon: const Icon(Icons.notifications_none_rounded),
+            //   onPressed: () {
+            //     SnackBarUtils.showInfo(
+            //       context,
+            //       'No new notifications',
+            //       duration: const Duration(seconds: 1),
+            //     );
+            //   },
+            // ),
+            // const SizedBox(width: 4),
             Builder(
               builder: (context) => GestureDetector(
                 onTap: () => Navigator.pushNamed(context, '/profile'),
