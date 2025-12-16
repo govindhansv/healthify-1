@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:http/http.dart' as http;
 import '../api_config.dart';
 
@@ -79,6 +78,55 @@ class MedicineService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete medicine: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUserMedicine(
+    String id,
+    Map<String, dynamic> medicineData,
+  ) async {
+    // Map frontend data to backend structure
+    final body = <String, dynamic>{
+      'name': medicineData['name'],
+      'dosage': medicineData['dosage'],
+      'instructions': medicineData['instructions'],
+      'frequency': medicineData['frequency']?.toLowerCase() ?? 'daily',
+      'startDate': (medicineData['startDate'] as DateTime).toIso8601String(),
+    };
+
+    // Add end date if provided
+    if (medicineData['endDate'] != null) {
+      body['endDate'] = (medicineData['endDate'] as DateTime).toIso8601String();
+    }
+
+    // Add reminder times
+    if (medicineData['times'] is List<TimeOfDay>) {
+      body['reminderTimes'] = (medicineData['times'] as List<TimeOfDay>)
+          .map(
+            (t) => {
+              'time':
+                  '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}',
+              'enabled': true,
+              'label': 'Reminder',
+            },
+          )
+          .toList();
+    }
+
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/user-medicines/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data'];
+    } else {
+      throw Exception('Failed to update medicine: ${response.body}');
     }
   }
 }

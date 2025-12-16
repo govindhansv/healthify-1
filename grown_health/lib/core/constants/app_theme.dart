@@ -63,6 +63,8 @@ class AppTheme {
   static const Color veryLightCyan = Color(AppConstants.veryLightCyanValue);
   static const Color pinkBorder = Color(AppConstants.pinkBorderValue);
   static const Color redVideo = Color(AppConstants.redVideoValue);
+  static const Color searchBarBg = Color(AppConstants.searchBarBgValue);
+  static const Color lightAccentBg = Color(AppConstants.lightAccentBgValue);
 
   // Orange palette
   static const Color orange = Color(AppConstants.orangeValue);

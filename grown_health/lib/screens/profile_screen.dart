@@ -384,16 +384,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 16),
           // Name
-          Text(
-            _profile?.name != null && _profile!.name!.isNotEmpty
-                ? _profile!.name!
-                : userEmail.split('@').first, // Use email prefix if no name
-            style: GoogleFonts.inter(
-              textStyle: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _profile?.name != null && _profile!.name!.isNotEmpty
+                    ? _profile!.name!
+                    : userEmail.split('@').first,
+                style: GoogleFonts.inter(
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: _showEditNameBottomSheet,
+                borderRadius: BorderRadius.circular(20),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: AppTheme.grey500,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           // Email
@@ -408,7 +426,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSectionHeader(
             'Health Metrics',
             editable: true,
-            onEdit: _showEditHealthMetricsDialog,
+            onEdit: _showEditHealthMetricsBottomSheet,
           ),
           const SizedBox(height: 16),
           _buildMetricRow(
@@ -431,7 +449,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSectionHeader(
             'Personal Information',
             editable: true,
-            onEdit: _showEditPersonalInfoDialog,
+            onEdit: _showEditPersonalInfoBottomSheet,
           ),
           const SizedBox(height: 16),
           _buildMetricRow(
@@ -535,85 +553,334 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Future<void> _showEditPersonalInfoDialog() async {
+  void _showStyledBottomSheet({
+    required String title,
+    required Widget content,
+    required VoidCallback onSave,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          top: 24,
+          left: 24,
+          right: 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.black,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close, size: 20),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            content,
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: onSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Save Changes',
+                  style: GoogleFonts.inter(
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.grey600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.black,
+          ),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(color: Colors.grey.shade400),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppTheme.accentColor,
+                width: 1.5,
+              ),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showEditNameBottomSheet() {
+    final nameController = TextEditingController(text: _profile?.name ?? '');
+
+    _showStyledBottomSheet(
+      title: 'Edit Name',
+      content: _buildTextField(
+        controller: nameController,
+        label: 'Full Name',
+        hint: 'Enter your name',
+      ),
+      onSave: () async {
+        Navigator.pop(context);
+        await _updateProfile(name: nameController.text.trim());
+      },
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String? value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    String Function(String)? labelBuilder,
+  }) {
+    // Ensure value is in items, otherwise null
+    final effectiveValue = items.contains(value) ? value : null;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.grey600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: effectiveValue,
+          items: items.map((item) {
+            return DropdownMenuItem(
+              value: item,
+              child: Text(
+                labelBuilder != null ? labelBuilder(item) : item,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.black,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppTheme.accentColor,
+                width: 1.5,
+              ),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+          ),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          dropdownColor: Colors.white,
+        ),
+      ],
+    );
+  }
+
+  void _showEditPersonalInfoBottomSheet() {
     final ageController = TextEditingController(
       text: _profile?.age?.toString() ?? '',
     );
-    final genderController = TextEditingController(
-      text: _profile?.gender ?? '',
-    );
+    // Gender handled by dropdown state
+    String? selectedGender = _profile?.gender;
     final weightController = TextEditingController(
       text: _profile?.weight?.toString() ?? '',
     );
     final heightController = TextEditingController(
       text: _profile?.height?.toString() ?? '',
     );
-    final goalController = TextEditingController(
-      text: _profile?.fitnessGoal ?? '',
-    );
+    // Goal handled by dropdown state
+    String? selectedGoal = _profile?.fitnessGoal;
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Personal Information'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: ageController,
-                  decoration: const InputDecoration(labelText: 'Age'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: genderController,
-                  decoration: const InputDecoration(labelText: 'Gender'),
-                ),
-                TextField(
-                  controller: weightController,
-                  decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  decoration: const InputDecoration(labelText: 'Height (cm)'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: goalController,
-                  decoration: const InputDecoration(labelText: 'Main Goal'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Save'),
-            ),
-          ],
+    final genderOptions = ['male', 'female', 'other'];
+    final goalOptions = [
+      'Lose Weight',
+      'Build Muscle',
+      'Keep Fit',
+      'Improve Endurance',
+      'Reduce Stress',
+    ];
+
+    _showStyledBottomSheet(
+      title: 'Edit Personal Info',
+      content: StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: ageController,
+                      label: 'Age',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildDropdownField(
+                      label: 'Gender',
+                      value: selectedGender,
+                      items: genderOptions,
+                      onChanged: (value) {
+                        setSheetState(() => selectedGender = value);
+                      },
+                      labelBuilder: (item) {
+                        // Capitalize first letter
+                        if (item.isEmpty) return item;
+                        return item[0].toUpperCase() + item.substring(1);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: weightController,
+                      label: 'Weight (kg)',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: heightController,
+                      label: 'Height (cm)',
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              _buildDropdownField(
+                label: 'Main Goal',
+                value: selectedGoal,
+                items: goalOptions,
+                onChanged: (value) {
+                  setSheetState(() => selectedGoal = value);
+                },
+              ),
+            ],
+          );
+        },
+      ),
+      onSave: () async {
+        Navigator.pop(context);
+        await _updateProfile(
+          age: int.tryParse(ageController.text.trim()),
+          gender: selectedGender,
+          weight: double.tryParse(weightController.text.trim()),
+          height: double.tryParse(heightController.text.trim()),
+          fitnessGoal: selectedGoal,
         );
       },
     );
-
-    if (result == true) {
-      await _updateProfile(
-        age: int.tryParse(ageController.text.trim()),
-        gender: genderController.text.trim().isEmpty
-            ? null
-            : genderController.text.trim(),
-        weight: double.tryParse(weightController.text.trim()),
-        height: double.tryParse(heightController.text.trim()),
-        fitnessGoal: goalController.text.trim(),
-      );
-    }
   }
 
-  Future<void> _showEditHealthMetricsDialog() async {
+  void _showEditHealthMetricsBottomSheet() {
     final cholController = TextEditingController(
       text: _cholesterol == 'Not set'
           ? ''
@@ -639,191 +906,211 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final systolicController = TextEditingController(text: currentSystolic);
     final diastolicController = TextEditingController(text: currentDiastolic);
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Health Metrics'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: cholController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Cholesterol (mg/dL)',
-                    hintText: 'e.g. 180',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: sugarController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Blood Sugar - Fasting (mg/dL)',
-                    hintText: 'e.g. 95',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Blood Pressure (mmHg)',
-                    style: TextStyle(fontSize: 12, color: AppTheme.grey500),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: systolicController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Systolic',
-                          hintText: '120',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '/',
-                        style: TextStyle(fontSize: 20, color: AppTheme.grey500),
-                      ),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: diastolicController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Diastolic',
-                          hintText: '80',
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    _showStyledBottomSheet(
+      title: 'Edit Health Metrics',
+      content: Column(
+        children: [
+          _buildTextField(
+            controller: cholController,
+            label: 'Cholesterol (mg/dL)',
+            hint: 'e.g. 180',
+            keyboardType: TextInputType.number,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: sugarController,
+            label: 'Blood Sugar - Fasting (mg/dL)',
+            hint: 'e.g. 95',
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Blood Pressure (mmHg)',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppTheme.grey600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: systolicController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '120',
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.accentColor,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      '/',
+                      style: TextStyle(
+                        fontSize: 24,
+                        color: AppTheme.grey400,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: diastolicController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '80',
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.accentColor,
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+      onSave: () async {
+        Navigator.pop(context);
+        final token = ref.read(authProvider).user?.token;
+        final userEmail = ref.read(authProvider).user?.email ?? '';
 
-    if (result == true) {
-      final token = ref.read(authProvider).user?.token;
-      final userEmail = ref.read(authProvider).user?.email ?? '';
+        final newChol = cholController.text.trim();
+        final newSugar = sugarController.text.trim();
 
-      final newChol = cholController.text.trim();
-      final newSugar = sugarController.text.trim();
-
-      // Combine BP
-      final sys = systolicController.text.trim();
-      final dia = diastolicController.text.trim();
-      String newBp = '';
-      if (sys.isNotEmpty && dia.isNotEmpty) {
-        newBp = '$sys/$dia';
-      } else if (sys.isNotEmpty) {
-        newBp = sys;
-      }
-
-      // Show loading
-      if (mounted) {
-        SnackBarUtils.showInfo(
-          context,
-          'Saving health metrics...',
-          duration: const Duration(seconds: 2),
-        );
-      }
-
-      try {
-        // Save to API
-        if (token != null) {
-          final service = HealthMetricsService(token);
-          final updatedMetrics = await service.updateHealthMetrics(
-            cholesterol: newChol,
-            bloodSugar: newSugar,
-            bloodPressure: newBp,
-          );
-
-          if (mounted) {
-            setState(() {
-              _cholesterol = updatedMetrics.cholesterolDisplay;
-              _bloodSugar = updatedMetrics.bloodSugarDisplay;
-              _bloodPressure = updatedMetrics.bloodPressureDisplay;
-            });
-          }
-          debugPrint('✅ Health metrics saved to API');
+        // Combine BP
+        final sys = systolicController.text.trim();
+        final dia = diastolicController.text.trim();
+        String newBp = '';
+        if (sys.isNotEmpty && dia.isNotEmpty) {
+          newBp = '$sys/$dia';
+        } else if (sys.isNotEmpty) {
+          newBp = sys;
         }
 
-        // Also save locally as backup
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          '${userEmail}_cholesterol',
-          newChol.isEmpty ? 'Not set' : newChol,
-        );
-        await prefs.setString(
-          '${userEmail}_bloodSugar',
-          newSugar.isEmpty ? 'Not set' : newSugar,
-        );
-        await prefs.setString(
-          '${userEmail}_bloodPressure',
-          newBp.isEmpty ? 'Not set' : newBp,
-        );
-
+        // Show loading
         if (mounted) {
-          SnackBarUtils.hide(context);
-          SnackBarUtils.showSuccess(context, 'Health metrics updated!');
-        }
-      } catch (e) {
-        debugPrint('❌ Failed to save health metrics: $e');
-
-        // Still update UI with local values
-        if (mounted) {
-          setState(() {
-            _cholesterol = newChol.isEmpty ? 'Not set' : newChol;
-            _bloodSugar = newSugar.isEmpty ? 'Not set' : newSugar;
-            _bloodPressure = newBp.isEmpty ? 'Not set' : newBp;
-          });
-
-          // Save locally anyway
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('${userEmail}_cholesterol', _cholesterol);
-          await prefs.setString('${userEmail}_bloodSugar', _bloodSugar);
-          await prefs.setString('${userEmail}_bloodPressure', _bloodPressure);
-
-          if (!mounted) return;
-          SnackBarUtils.hide(context);
-          SnackBarUtils.showWarning(
+          SnackBarUtils.showInfo(
             context,
-            'Saved locally (Offline)',
+            'Saving health metrics...',
             duration: const Duration(seconds: 2),
           );
         }
-      }
-    }
+
+        try {
+          // Save to API
+          if (token != null) {
+            final service = HealthMetricsService(token);
+            final updatedMetrics = await service.updateHealthMetrics(
+              cholesterol: newChol,
+              bloodSugar: newSugar,
+              bloodPressure: newBp,
+            );
+
+            if (mounted) {
+              setState(() {
+                _cholesterol = updatedMetrics.cholesterolDisplay;
+                _bloodSugar = updatedMetrics.bloodSugarDisplay;
+                _bloodPressure = updatedMetrics.bloodPressureDisplay;
+              });
+            }
+            debugPrint('✅ Health metrics saved to API');
+          }
+
+          // Also save locally as backup
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            '${userEmail}_cholesterol',
+            newChol.isEmpty ? 'Not set' : newChol,
+          );
+          await prefs.setString(
+            '${userEmail}_bloodSugar',
+            newSugar.isEmpty ? 'Not set' : newSugar,
+          );
+          await prefs.setString(
+            '${userEmail}_bloodPressure',
+            newBp.isEmpty ? 'Not set' : newBp,
+          );
+
+          if (mounted) {
+            SnackBarUtils.hide(context);
+            SnackBarUtils.showSuccess(context, 'Health metrics updated!');
+          }
+        } catch (e) {
+          debugPrint('❌ Failed to save health metrics: $e');
+
+          // Still update UI with local values
+          if (mounted) {
+            setState(() {
+              _cholesterol = newChol.isEmpty ? 'Not set' : newChol;
+              _bloodSugar = newSugar.isEmpty ? 'Not set' : newSugar;
+              _bloodPressure = newBp.isEmpty ? 'Not set' : newBp;
+            });
+
+            // Save locally anyway
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('${userEmail}_cholesterol', _cholesterol);
+            await prefs.setString('${userEmail}_bloodSugar', _bloodSugar);
+            await prefs.setString('${userEmail}_bloodPressure', _bloodPressure);
+
+            if (!mounted) return;
+            SnackBarUtils.hide(context);
+            SnackBarUtils.showWarning(
+              context,
+              'Saved locally (Offline)',
+              duration: const Duration(seconds: 2),
+            );
+          }
+        }
+      },
+    );
   }
 
   Future<void> _updateProfile({

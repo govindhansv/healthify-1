@@ -105,7 +105,10 @@ class MyApp extends StatelessWidget {
               builder: (_) => const MedicineRemindersScreen(),
             );
           case '/add_medicine':
-            return MaterialPageRoute(builder: (_) => const AddMedicineScreen());
+            return MaterialPageRoute(
+              builder: (_) => const AddMedicineScreen(),
+              settings: settings,
+            );
           case '/api_test':
             return MaterialPageRoute(builder: (_) => const ApiTestScreen());
           case '/nutrition':

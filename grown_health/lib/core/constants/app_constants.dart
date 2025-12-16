@@ -61,6 +61,8 @@ class AppConstants {
   static const int veryLightCyanValue = 0xFFE1F5FE; // Gradient light cyan
   static const int pinkBorderValue = 0xFFF7D4DD; // Pink border color
   static const int redVideoValue = 0xFFE53935; // Video/live indicator
+  static const int searchBarBgValue = 0xFFF5F6F8; // Subtle grey for search bars
+  static const int lightAccentBgValue = 0xFFFCE4E8; // Light accent pink bg
 
   // Orange Palette
   static const int orangeValue = 0xFFFF9800; // Orange
