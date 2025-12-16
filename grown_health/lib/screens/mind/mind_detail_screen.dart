@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -397,11 +396,10 @@ class _MindDetailScreenState extends ConsumerState<MindDetailScreen> {
 
   void _startMeditation() {
     // TODO: Implement meditation player (audio/video playback)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Starting meditation...'),
-        duration: Duration(seconds: 1),
-      ),
+    SnackBarUtils.showInfo(
+      context,
+      'Starting meditation...',
+      duration: const Duration(seconds: 1),
     );
   }
 

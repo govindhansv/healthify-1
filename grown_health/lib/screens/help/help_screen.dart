@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -102,11 +102,10 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
 
   Future<void> _goNext() async {
     if (_selectedOption == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an answer before continuing.'),
-          duration: Duration(seconds: 1),
-        ),
+      SnackBarUtils.showWarning(
+        context,
+        'Please select an answer before continuing.',
+        duration: const Duration(seconds: 1),
       );
       return;
     }
@@ -191,8 +190,9 @@ class _HelpScreenState extends ConsumerState<HelpScreen> {
             onPressed: () {
               Navigator.of(ctx).pop();
               Navigator.of(context).pop(); // Go back to where they came from
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Assessment saved successfully!')),
+              SnackBarUtils.showSuccess(
+                context,
+                'Assessment saved successfully!',
               );
             },
             child: const Text('Done'),

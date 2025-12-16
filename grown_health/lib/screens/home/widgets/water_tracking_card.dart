@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../services/water_service.dart';
@@ -123,14 +123,10 @@ class _WaterTrackingCardState extends ConsumerState<WaterTrackingCard> {
 
       // Show success feedback
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Added 250ml! ${result.count}/${result.goal} glasses',
-            ),
-            duration: const Duration(seconds: 1),
-            backgroundColor: AppTheme.successColor,
-          ),
+        SnackBarUtils.showSuccess(
+          context,
+          'Added 250ml! ${result.count}/${result.goal} glasses',
+          duration: const Duration(seconds: 1),
         );
       }
     } catch (e) {

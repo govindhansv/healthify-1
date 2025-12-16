@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/auth_provider.dart';
@@ -131,9 +131,7 @@ class WaterTrackingWidget extends ConsumerWidget {
               if (val != null && val >= 1 && val <= 20) {
                 Navigator.pop(context, val);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter 1-20 glasses')),
-                );
+                SnackBarUtils.showWarning(context, 'Please enter 1-20 glasses');
               }
             },
             child: const Text('Save'),
@@ -145,9 +143,7 @@ class WaterTrackingWidget extends ConsumerWidget {
     if (result != null && token != null) {
       await ref.read(waterNotifierProvider(token).notifier).setGoal(result);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Goal updated!')));
+        SnackBarUtils.showSuccess(context, 'Goal updated!');
       }
     }
   }

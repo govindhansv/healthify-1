@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +25,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   final _weightController = TextEditingController();
-  final _heightController = TextEditingController(); // Added height
+  final _heightController = TextEditingController();
   String? _selectedGender;
 
   // Step 2 selection
@@ -54,41 +54,30 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
-      // Validate first page before proceeding
       if (_currentPage == 0) {
         final name = _nameController.text.trim();
         final age = _ageController.text.trim();
         final weight = _weightController.text.trim();
-        final height = _heightController.text.trim(); // Added height validation
+        final height = _heightController.text.trim();
 
         if (name.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter your name')),
-          );
+          SnackBarUtils.showWarning(context, 'Please enter your name');
           return;
         }
         if (age.isEmpty || int.tryParse(age) == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter a valid age')),
-          );
+          SnackBarUtils.showWarning(context, 'Please enter a valid age');
           return;
         }
         if (weight.isEmpty || double.tryParse(weight) == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter a valid weight')),
-          );
+          SnackBarUtils.showWarning(context, 'Please enter a valid weight');
           return;
         }
         if (height.isEmpty || double.tryParse(height) == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please enter a valid height')),
-          );
+          SnackBarUtils.showWarning(context, 'Please enter a valid height');
           return;
         }
         if (_selectedGender == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select your gender')),
-          );
+          SnackBarUtils.showWarning(context, 'Please select your gender');
           return;
         }
       }
@@ -98,7 +87,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         curve: Curves.easeOut,
       );
     } else {
-      // Last page, complete profile and go to home
       _completeProfileAndGoHome();
     }
   }
@@ -150,9 +138,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Call the profile API if we have a token
       if (token != null && token.isNotEmpty) {
-        debugPrint('📡 Calling profile/complete API...');
         final profileService = ProfileService(token);
         await profileService.completeProfile(
           name: name.isNotEmpty ? name : 'User',
@@ -162,10 +148,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           height: height,
           fitnessGoal: fitnessGoal,
         );
-        debugPrint('✅ Profile completed on backend');
       }
 
-      // Also save locally as backup
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', true);
 
@@ -173,7 +157,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         await prefs.setString('userName', name);
       }
 
-      // Save profile data locally for fallback
       final profileData = {
         'name': name,
         'age': age,
@@ -185,39 +168,31 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         'profileCompleted': true,
       };
       await prefs.setString('profile_data_$userEmail', jsonEncode(profileData));
-      debugPrint('💾 Profile saved locally for $userEmail');
 
-      // Update auth state to mark profile as complete
       ref.read(authProvider.notifier).setProfileCompleted(true);
 
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile setup complete!'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
 
       Navigator.of(
         context,
       ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
     } catch (e) {
-      debugPrint('❌ Profile completion error: $e');
-
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      // Show error but still allow proceeding (save locally)
       final errorMsg = e.toString().replaceFirst('Exception: ', '');
 
+      // ignore: use_build_context_synchronously
       final shouldProceed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text('Profile Sync Issue'),
           content: Text(
             'Could not save profile to server: $errorMsg\n\n'
-            'Your profile will be saved locally. Would you like to continue?',
+            'Your profile will be saved locally. Continue?',
           ),
           actions: [
             TextButton(
@@ -233,7 +208,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       );
 
       if (shouldProceed == true) {
-        // Save locally and proceed
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
         if (name.isNotEmpty) {
@@ -255,7 +229,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           jsonEncode(profileData),
         );
 
-        // Update auth state to mark profile as complete
         ref.read(authProvider.notifier).setProfileCompleted(true);
 
         if (mounted) {
@@ -267,21 +240,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  Future<void> _skipAndGoHome() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isLoggedIn', true);
-
-    if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
-  }
-
   void _showGenderPicker() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: AppTheme.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return SafeArea(
@@ -297,39 +261,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Text(
                 'Select gender',
                 style: GoogleFonts.inter(
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.black,
                 ),
               ),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('Male'),
-                onTap: () {
-                  setState(() => _selectedGender = 'Male');
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                title: const Text('Female'),
-                onTap: () {
-                  setState(() => _selectedGender = 'Female');
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                title: const Text('Prefer not to say'),
-                onTap: () {
-                  setState(() => _selectedGender = 'Prefer not to say');
-                  Navigator.pop(context);
-                },
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              _buildGenderOption('Male'),
+              _buildGenderOption('Female'),
+              _buildGenderOption('Prefer not to say'),
+              const SizedBox(height: 32),
             ],
           ),
         );
@@ -337,116 +282,169 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
+  Widget _buildGenderOption(String gender) {
+    return InkWell(
+      onTap: () {
+        setState(() => _selectedGender = gender);
+        Navigator.pop(context);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Text(
+              gender,
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.black87,
+              ),
+            ),
+            const Spacer(),
+            if (_selectedGender == gender)
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppTheme.accentColor,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.white,
+      backgroundColor: const Color(0xFFFAFAFA), // Slightly cleaner white
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar with back, progress, skip
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  // Back button
-                  GestureDetector(
-                    onTap: _currentPage > 0 ? _prevPage : null,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppTheme.accentColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left_rounded,
-                        color: AppTheme.white,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Progress bar
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (_currentPage + 1) / _totalPages,
-                        backgroundColor: AppTheme.grey200,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppTheme.accentColor,
-                        ),
-                        minHeight: 6,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Skip button
-                  GestureDetector(
-                    onTap: _isLoading ? null : _skipAndGoHome,
-                    child: Text(
-                      'Skip',
-                      style: GoogleFonts.inter(
-                        textStyle: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: _isLoading ? AppTheme.grey500 : AppTheme.black,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Page content
+            _buildTopBar(),
             Expanded(
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) {
-                  setState(() => _currentPage = index);
-                },
+                onPageChanged: (index) => setState(() => _currentPage = index),
                 children: [_buildStep1(), _buildStep2()],
               ),
             ),
-            // Next button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _nextPage,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+            _buildBottomButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _currentPage > 0 ? _prevPage : null,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: _currentPage > 0 ? 1.0 : 0.0,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppTheme.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.grey200, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.white,
-                          ),
-                        )
-                      : Text(
-                          _currentPage < _totalPages - 1 ? 'Next' : 'Finish',
-                          style: GoogleFonts.inter(
-                            textStyle: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.white,
-                            ),
-                          ),
-                        ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppTheme.black,
+                  size: 18,
                 ),
               ),
             ),
-          ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: (_currentPage + 1) / _totalPages,
+                backgroundColor: AppTheme.grey100,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppTheme.accentColor,
+                ),
+                minHeight: 8,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          TextButton(
+            onPressed: _isLoading ? null : _skipAndGoHome,
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.grey500,
+              textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
+            ),
+            child: const Text('Skip'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _skipAndGoHome() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+
+    if (!mounted) return;
+    Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+  }
+
+  Widget _buildBottomButton() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+      child: SizedBox(
+        width: double.infinity,
+        height: 56,
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _nextPage,
+          style:
+              ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accentColor,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ).copyWith(
+                shadowColor: MaterialStateProperty.all(
+                  AppTheme.accentColor.withOpacity(0.3),
+                ),
+                elevation: MaterialStateProperty.all(8),
+              ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppTheme.white,
+                  ),
+                )
+              : Text(
+                  _currentPage < _totalPages - 1 ? 'Next' : 'Complete Setup',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.white,
+                  ),
+                ),
         ),
       ),
     );
@@ -456,131 +454,192 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Text(
-            'Tell me more',
+            'Tell us about\nyourself',
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.black,
+              height: 1.1,
+              letterSpacing: -0.5,
             ),
           ),
+          const SizedBox(height: 12),
           Text(
-            'About Yourself',
+            'To give you a better experience we need\nto know your gender',
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.grey600,
+              height: 1.5,
             ),
           ),
-          const SizedBox(height: 32),
-          _buildInputField(
-            controller: _nameController,
-            hint: 'Enter your name',
-            label: 'Your Name',
-            keyboardType: TextInputType.name,
-          ),
-          const SizedBox(height: 16),
-          _buildInputField(
-            controller: _ageController,
-            hint: 'Enter your age',
-            label: 'Your Age',
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 40),
+
+          // Gender Selector
           GestureDetector(
             onTap: _showGenderPicker,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.grey300),
-                borderRadius: BorderRadius.circular(12),
+                color: AppTheme.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
                 children: [
-                  Text(
-                    _selectedGender ?? 'Select gender',
-                    style: GoogleFonts.inter(
-                      textStyle: TextStyle(
-                        fontSize: 14,
-                        color: _selectedGender != null
-                            ? AppTheme.black
-                            : AppTheme.grey500,
-                      ),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: _selectedGender != null
+                          ? AppTheme.accentColor.withOpacity(0.1)
+                          : AppTheme.grey50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _selectedGender == 'Male'
+                          ? Icons.male_rounded
+                          : _selectedGender == 'Female'
+                          ? Icons.female_rounded
+                          : Icons.person_rounded,
+                      color: _selectedGender != null
+                          ? AppTheme.accentColor
+                          : AppTheme.grey400,
+                      size: 30,
                     ),
                   ),
+                  const SizedBox(height: 12),
                   Text(
-                    'Your Gender',
+                    _selectedGender ?? 'Select Gender',
                     style: GoogleFonts.inter(
-                      textStyle: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.grey500,
-                      ),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _selectedGender != null
+                          ? AppTheme.black
+                          : AppTheme.grey400,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildInputField(
-            controller: _weightController,
-            hint: 'Enter weight (kg)',
-            label: 'Your Weight',
-            keyboardType: TextInputType.number,
+
+          const SizedBox(height: 24),
+
+          _buildRoundedInput(
+            controller: _nameController,
+            label: 'Name',
+            hint: 'Your Name',
+            icon: Icons.person_outline_rounded,
           ),
           const SizedBox(height: 16),
-          _buildInputField(
+          Row(
+            children: [
+              Expanded(
+                child: _buildRoundedInput(
+                  controller: _ageController,
+                  label: 'Age',
+                  hint: '25',
+                  icon: Icons.calendar_today_rounded,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildRoundedInput(
+                  controller: _weightController,
+                  label: 'Weight',
+                  hint: '70kg',
+                  icon: Icons.monitor_weight_outlined,
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildRoundedInput(
             controller: _heightController,
-            hint: 'Enter height (cm)',
-            label: 'Your Height',
+            label: 'Height',
+            hint: '175cm',
+            icon: Icons.height_rounded,
             keyboardType: TextInputType.number,
           ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _buildInputField({
+  Widget _buildRoundedInput({
     required TextEditingController controller,
-    required String hint,
     required String label,
+    required String hint,
+    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.grey300),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              keyboardType: keyboardType,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
-                hintStyle: GoogleFonts.inter(
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.grey500,
-                  ),
-                ),
-              ),
-            ),
+        color: AppTheme.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             label,
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(fontSize: 12, color: AppTheme.grey500),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.grey500,
             ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(icon, size: 20, color: AppTheme.accentColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  keyboardType: keyboardType,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.black,
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    hintText: hint,
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.grey300,
+                    ),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -588,72 +647,101 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   Widget _buildStep2() {
-    // Removed local goals variable, using _goals
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Text(
-            "what's Your main goal?",
+            'What is your\nmain goal?',
             style: GoogleFonts.inter(
-              textStyle: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.black,
+              height: 1.1,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'This helps us create your personalized\nplan',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.grey600,
+              height: 1.5,
             ),
           ),
           const SizedBox(height: 32),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.1,
-            children: _goals.map((goal) {
-              final isSelected = _selectedGoal == goal['id'];
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _selectedGoal = goal['id'] as String);
-                },
-                child: Container(
+          ..._goals.map((goal) {
+            final isSelected = _selectedGoal == goal['id'];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: GestureDetector(
+                onTap: () =>
+                    setState(() => _selectedGoal = goal['id'] as String),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppTheme.grey100,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppTheme.accentColor
-                          : AppTheme.transparent,
-                      width: 2,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        goal['icon'] as IconData,
-                        size: 40,
-                        color: AppTheme.accentColor,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        goal['label'] as String,
-                        style: GoogleFonts.inter(
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                    color: isSelected ? AppTheme.accentColor : AppTheme.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isSelected
+                            ? AppTheme.accentColor.withOpacity(0.3)
+                            : Colors.black.withOpacity(0.04),
+                        blurRadius: isSelected ? 20 : 16,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.white.withOpacity(0.2)
+                              : AppTheme.grey50,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          goal['icon'] as IconData,
+                          color: isSelected ? AppTheme.white : AppTheme.black,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Text(
+                        goal['label'] as String,
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected ? AppTheme.white : AppTheme.black,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (isSelected)
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: AppTheme.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 14,
+                            color: AppTheme.accentColor,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            );
+          }).toList(),
         ],
       ),
     );

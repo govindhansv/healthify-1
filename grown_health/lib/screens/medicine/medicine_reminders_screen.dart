@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -46,9 +46,7 @@ class _MedicineRemindersScreenState
       debugPrint('Error loading medicines: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load medicines: $e')));
+        SnackBarUtils.showError(context, 'Failed to load medicines: $e');
       }
     }
   }
@@ -65,21 +63,16 @@ class _MedicineRemindersScreenState
         _persistLatest(result); // Keep local persistence for Home screen
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Added! Reminders set for ${result['times']?.length ?? 1} time(s).',
-              ),
-              duration: const Duration(seconds: 2),
-            ),
+          SnackBarUtils.showSuccess(
+            context,
+            'Added! Reminders set for ${result['times']?.length ?? 1} time(s).',
+            duration: const Duration(seconds: 2),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to save to cloud: $e')));
+        SnackBarUtils.showError(context, 'Failed to save to cloud: $e');
         // Fallback: Add locally anyway for UX if desired, or just fail.
         // For now, let's keep local state in sync with server only on success.
       }
@@ -98,19 +91,16 @@ class _MedicineRemindersScreenState
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Medicine deleted'),
-              duration: Duration(seconds: 2),
-            ),
+          SnackBarUtils.showInfo(
+            context,
+            'Medicine deleted',
+            duration: const Duration(seconds: 2),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+        SnackBarUtils.showError(context, 'Failed to delete: $e');
       }
     }
   }
@@ -319,12 +309,9 @@ class _MedicineRemindersScreenState
                 // Simplistic "Update" by optimistic UI or reloading
                 // Ideally we call an Update API.
                 // For now, let's just trigger a reload to be safe or implement update later.
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Editing not fully connected to backend in this step yet.',
-                    ),
-                  ),
+                SnackBarUtils.showWarning(
+                  context,
+                  'Editing not fully connected to backend in this step yet.',
                 );
               }
             },

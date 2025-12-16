@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -189,13 +189,9 @@ class _BundleDetailScreenState extends ConsumerState<BundleDetailScreen> {
         } else {
           // Other error
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  errorData['message'] ?? 'Failed to start workout',
-                ),
-                backgroundColor: AppTheme.errorColor,
-              ),
+            SnackBarUtils.showError(
+              context,
+              errorData['message'] ?? 'Failed to start workout',
             );
           }
         }
@@ -207,13 +203,9 @@ class _BundleDetailScreenState extends ConsumerState<BundleDetailScreen> {
         if (e.toString().toLowerCase().contains('active')) {
           Navigator.of(context).pushNamed('/player');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Error: ${e.toString().replaceAll('Exception: ', '')}',
-              ),
-              backgroundColor: AppTheme.errorColor,
-            ),
+          SnackBarUtils.showError(
+            context,
+            'Error: ${e.toString().replaceAll('Exception: ', '')}',
           );
         }
       }

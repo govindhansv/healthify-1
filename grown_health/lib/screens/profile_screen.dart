@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -310,12 +310,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } catch (e) {
       debugPrint('❌ Image upload failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to upload image: ${e.toString().replaceAll("Exception:", "")}',
-            ),
-          ),
+        SnackBarUtils.showError(
+          context,
+          'Failed to upload image: ${e.toString().replaceAll("Exception:", "")}',
         );
         setState(() => _loading = false);
       }
@@ -754,24 +751,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       // Show loading
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.white,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Text('Saving health metrics...'),
-              ],
-            ),
-            duration: Duration(seconds: 2),
-          ),
+        SnackBarUtils.showInfo(
+          context,
+          'Saving health metrics...',
+          duration: const Duration(seconds: 2),
         );
       }
 
@@ -811,13 +794,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Health metrics updated!'),
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
+          SnackBarUtils.hide(context);
+          SnackBarUtils.showSuccess(context, 'Health metrics updated!');
         }
       } catch (e) {
         debugPrint('❌ Failed to save health metrics: $e');
@@ -837,13 +815,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           await prefs.setString('${userEmail}_bloodPressure', _bloodPressure);
 
           if (!mounted) return;
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Saved locally (Offline)'),
-              backgroundColor: AppTheme.warningColor,
-              duration: Duration(seconds: 2),
-            ),
+          SnackBarUtils.hide(context);
+          SnackBarUtils.showWarning(
+            context,
+            'Saved locally (Offline)',
+            duration: const Duration(seconds: 2),
           );
         }
       }
@@ -893,24 +869,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await _loadProfile();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        SnackBarUtils.showSuccess(context, 'Profile updated successfully!');
       }
     } catch (e) {
       debugPrint('❌ Profile update failed: $e');
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to update: ${e.toString().replaceFirst('Exception: ', '')}',
-            ),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        SnackBarUtils.showError(
+          context,
+          'Failed to update: ${e.toString().replaceFirst('Exception: ', '')}',
         );
       }
     }

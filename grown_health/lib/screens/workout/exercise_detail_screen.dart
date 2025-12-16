@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Exercise Detail Screen - Shows details of a specific exercise
@@ -66,9 +66,7 @@ class ExerciseDetailScreen extends StatelessWidget {
                   color: AppTheme.grey500,
                 ),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Added to favorites')),
-                  );
+                  SnackBarUtils.showSuccess(context, 'Added to favorites');
                 },
               ),
             ),

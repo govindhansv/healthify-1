@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/profile_service.dart';
@@ -53,12 +53,7 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile completed successfully!'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
+        SnackBarUtils.showSuccess(context, 'Profile completed successfully!');
 
         // Return the profile data so we can save it locally
         final profileData = {
@@ -77,13 +72,9 @@ class _ProfileCompleteScreenState extends ConsumerState<ProfileCompleteScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed: ${e.toString().replaceFirst('Exception: ', '')}',
-            ),
-            backgroundColor: AppTheme.errorColor,
-          ),
+        SnackBarUtils.showError(
+          context,
+          'Failed: ${e.toString().replaceFirst('Exception: ', '')}',
         );
       }
     }

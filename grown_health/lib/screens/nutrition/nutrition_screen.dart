@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -900,13 +900,10 @@ class _FunctionalHydrationCard extends ConsumerWidget {
 
     void addWater() {
       ref.read(waterNotifierProvider(token).notifier).addWater();
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('+250ml added!'),
-          backgroundColor: AppTheme.successColor,
-          duration: const Duration(seconds: 1),
-        ),
+      SnackBarUtils.showSuccess(
+        context,
+        '+250ml added!',
+        duration: const Duration(seconds: 1),
       );
     }
 

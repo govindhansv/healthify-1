@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:grown_health/core/constants/app_theme.dart';
+import 'package:grown_health/core/core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -33,15 +33,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final confirm = _confirmPasswordController.text;
 
     if (email.isEmpty || password.isEmpty || confirm.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all required fields')),
-      );
+      SnackBarUtils.showWarning(context, 'Please fill all required fields');
       return;
     }
     if (password != confirm) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      SnackBarUtils.showWarning(context, 'Passwords do not match');
       return;
     }
 
@@ -54,10 +50,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created! Let\'s set up your profile.'),
-        ),
+      SnackBarUtils.showSuccess(
+        context,
+        'Account created! Let\'s set up your profile.',
       );
       Navigator.of(
         context,
@@ -65,9 +60,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     } else {
       final error = ref.read(authProvider).error;
       if (error != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error)));
+        SnackBarUtils.showError(context, error);
       }
     }
   }
