@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grown_health/core/constants/app_theme.dart';
 import 'package:grown_health/core/constants/app_constants.dart';
+import 'package:grown_health/providers/auth_provider.dart';
+import 'package:grown_health/providers/water_provider.dart';
+import 'package:grown_health/services/nutrition_service.dart';
+import 'recipe_detail_screen.dart';
 
 class NutritionScreen extends StatelessWidget {
   const NutritionScreen({super.key});
@@ -119,34 +124,19 @@ class NutritionScreen extends StatelessWidget {
   }
 }
 
-class _HydrationCard extends StatefulWidget {
+class _HydrationCard extends ConsumerWidget {
   const _HydrationCard();
 
   @override
-  State<_HydrationCard> createState() => _HydrationCardState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final token = ref.watch(authProvider).user?.token;
+    final waterState = ref.watch(waterNotifierProvider(token));
 
-class _HydrationCardState extends State<_HydrationCard> {
-  int currentIntake = 0;
-  final int dailyGoal = 2000;
-
-  void _addWater() {
-    setState(() {
-      if (currentIntake < dailyGoal) {
-        currentIntake += 200;
-        if (currentIntake > dailyGoal) {
-          currentIntake = dailyGoal;
-        }
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     // Colors extracted from design
     const Color darkMaroon = Color(0xFF64091A);
     const Color forestGreen = Color(0xFF0C5531);
     const Color darkGreyText = Color(0xFF3B3B3B);
+    const Color fillColor = Color(0xFFC75B6E);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -166,10 +156,10 @@ class _HydrationCardState extends State<_HydrationCard> {
         children: [
           // Water Bottle Graphic
           _WaterBottleGraphic(
-            fillColor: const Color(0xFFC75B6E),
+            fillColor: fillColor,
             emptyColor: Colors.transparent,
-            currentIntake: currentIntake,
-            maxIntake: dailyGoal,
+            currentIntake: waterState.currentMl,
+            maxIntake: waterState.goalMl,
           ),
           const SizedBox(width: 24),
           Expanded(
@@ -178,7 +168,7 @@ class _HydrationCardState extends State<_HydrationCard> {
               children: [
                 const SizedBox(height: 8),
                 Text(
-                  '${currentIntake}ml / ${dailyGoal}ml',
+                  '${waterState.currentMl}ml / ${waterState.goalMl}ml',
                   style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.w600,
@@ -188,7 +178,7 @@ class _HydrationCardState extends State<_HydrationCard> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Remaining: ${dailyGoal - currentIntake}ml',
+                  'Remaining: ${waterState.remainingMl}ml',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -209,7 +199,16 @@ class _HydrationCardState extends State<_HydrationCard> {
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: _addWater,
+                    onTap: waterState.loading
+                        ? null
+                        : () => ref
+                              .read(waterNotifierProvider(token).notifier)
+                              .addWater(),
+                    onLongPress: waterState.loading
+                        ? null
+                        : () => ref
+                              .read(waterNotifierProvider(token).notifier)
+                              .removeWater(),
                     borderRadius: BorderRadius.circular(7),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -220,14 +219,20 @@ class _HydrationCardState extends State<_HydrationCard> {
                         border: Border.all(color: forestGreen),
                         borderRadius: BorderRadius.circular(7),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add, size: 20, color: forestGreen),
-                          SizedBox(width: 8),
+                          Icon(
+                            waterState.loading
+                                ? Icons.hourglass_empty
+                                : Icons.add,
+                            size: 20,
+                            color: forestGreen,
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            '200 ml',
-                            style: TextStyle(
+                            waterState.loading ? 'Updating...' : '250 ml',
+                            style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.normal,
                               color: forestGreen,
@@ -447,92 +452,171 @@ class _WeightGoalCards extends StatelessWidget {
   }
 }
 
-class _RecipeOfTheDayCard extends StatelessWidget {
+class _RecipeOfTheDayCard extends StatefulWidget {
   const _RecipeOfTheDayCard();
 
   @override
+  State<_RecipeOfTheDayCard> createState() => _RecipeOfTheDayCardState();
+}
+
+class _RecipeOfTheDayCardState extends State<_RecipeOfTheDayCard> {
+  NutritionItem? _recipe;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecipe();
+  }
+
+  Future<void> _loadRecipe() async {
+    final recipe = await NutritionService.getRecipeOfTheDay();
+    if (mounted) {
+      setState(() {
+        _recipe = recipe;
+        _loading = false;
+      });
+    }
+  }
+
+  void _navigateToDetail() {
+    if (_recipe != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => RecipeDetailScreen(recipe: _recipe!)),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-        border: Border.all(color: AppTheme.grey200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Recipe of the Day',
-                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.grey700,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkRedText,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'View',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                      size: 12,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Avocado & Spinach Salad',
-            style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: _recipe != null ? _navigateToDetail : null,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(
-                Icons.local_fire_department,
-                size: 16,
-                color: AppTheme.primaryColor,
-              ),
-              const SizedBox(width: 4),
-              Text('112 cal', style: AppTheme.lightTheme.textTheme.bodySmall),
-              const SizedBox(width: 16),
-              const Icon(Icons.timer, size: 16, color: AppTheme.primaryColor),
-              const SizedBox(width: 4),
-              Text('15 min', style: AppTheme.lightTheme.textTheme.bodySmall),
-            ],
-          ),
-        ],
+          ],
+          border: Border.all(color: AppTheme.grey200),
+        ),
+        child: _loading
+            ? const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryColor,
+                    strokeWidth: 2,
+                  ),
+                ),
+              )
+            : _recipe == null
+            ? _buildNoRecipeState()
+            : _buildRecipeContent(),
       ),
+    );
+  }
+
+  Widget _buildNoRecipeState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(Icons.restaurant_menu, size: 40, color: AppTheme.grey400),
+        const SizedBox(height: 12),
+        Text(
+          'No recipe available',
+          style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+            color: AppTheme.grey500,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Check back later for new recipes!',
+          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+            color: AppTheme.grey400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRecipeContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Recipe of the Day',
+              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: AppTheme.grey700,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.darkRedText,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    'View',
+                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
+                    size: 12,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          _recipe!.title,
+          style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(
+              Icons.local_fire_department,
+              size: 16,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${_recipe!.calories} cal',
+              style: AppTheme.lightTheme.textTheme.bodySmall,
+            ),
+            const SizedBox(width: 16),
+            const Icon(Icons.timer, size: 16, color: AppTheme.primaryColor),
+            const SizedBox(width: 4),
+            Text(
+              '${_recipe!.prepTime} min',
+              style: AppTheme.lightTheme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
